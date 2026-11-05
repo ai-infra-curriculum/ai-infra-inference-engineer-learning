@@ -23,7 +23,7 @@ By the end of this chapter you can:
 - Measure the goodput envelope (prefill QPS × decode QPS inside SLO) and reason about placement — how many prefill workers vs. how many decode workers.
 - Recognise the three main failure modes (KV transfer bandwidth cliff, imbalanced pool sizing, router hotspotting) and the mitigations.
 
-<!-- needs-research: disaggregated prefill-decode has rapidly evolved since late 2024. The specific flag spellings and architecture components (Dynamo's NIXL, SGLang's PD-disaggregation, vLLM's PDD) rotate across releases. Verify every example below against the pinned version. -->
+Disaggregated prefill-decode has evolved rapidly since late 2024 — specific flag spellings and architecture components (Dynamo's NIXL, SGLang's PD-disaggregation, vLLM's KV-transfer config) rotate across releases; verify every example below against the pinned version before deploying.
 
 ## The architecture
 
@@ -172,7 +172,7 @@ router:
   kv_cache_dtype: fp8                  # optional KV quantisation during transfer
 ```
 
-<!-- needs-research: Dynamo's config shape and defaults rotate; verify against the current Dynamo documentation (https://docs.nvidia.com/dynamo/). The example above is illustrative. -->
+The config shape and defaults above are illustrative; Dynamo's config schema rotates release-to-release — verify against the current [Dynamo documentation](https://docs.nvidia.com/dynamo/).
 
 ### SGLang — PD disaggregation
 
@@ -202,7 +202,7 @@ python -m sglang.router \
     --policy prefill-decode-disaggregated
 ```
 
-<!-- needs-research: SGLang's P-D disaggregation flag spellings and routing policies rotate; verify against the SGLang docs' "PD Disaggregation" section for your release. -->
+The `--disaggregation-mode`, `--disaggregation-ib-device`, and router flags above match SGLang's documented PD-disaggregation interface (see [SGLang PD Disaggregation docs](https://docs.sglang.ai/advanced_features/pd_disaggregation.html)); exact flag spellings and routing policies can rotate across releases, so check the docs for your pinned version.
 
 ### vLLM — PD disaggregation (later releases)
 
@@ -222,7 +222,7 @@ vllm serve meta-llama/Llama-3.1-70B-Instruct \
     --port 8200
 ```
 
-<!-- needs-research: vLLM's PD-disaggregation configuration (`--kv-transfer-config`, connectors) is new and the API is likely to change. Verify against the pinned release's `distributed-serving` or `kv-transfer` docs. -->
+vLLM's PD-disaggregation configuration (`--kv-transfer-config`, connectors) is comparatively new and the API is likely to change; verify against your pinned release's distributed-serving or kv-transfer docs before copying this shape.
 
 ## Pool sizing — a worked example
 

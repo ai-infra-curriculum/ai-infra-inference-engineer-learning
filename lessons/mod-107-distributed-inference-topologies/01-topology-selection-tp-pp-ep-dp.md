@@ -20,7 +20,7 @@ By the end of this chapter you can:
 - Name the collectives each topology implies, which the later chapters cost out.
 - Recognise the "small model, big batch" DP-attention regime, the "doesn't fit on one node" PP boundary, and the "MoE" EP boundary.
 
-<!-- needs-research: The specific thresholds (e.g. "TP works to 8-way inside a node, degrades past that") depend on the GPU generation and the interconnect; verify against the engine's distributed-serving documentation and the hardware vendor's bandwidth specs for your target fleet. -->
+Specific thresholds (e.g. how far TP scales inside a node before degrading) depend on the GPU generation and the interconnect; the numbers quoted in this chapter are directional — verify against your engine's distributed-serving documentation and the hardware vendor's bandwidth specs for your target fleet.
 
 ## The four axes
 
@@ -223,9 +223,7 @@ Collectives: EP all-to-all per MoE layer (chapter 05) + TP AllReduce for the att
 Interconnect: multi-node → IB / RoCE for the EP all-to-all; this is the dominant cost.
 ```
 
-Verify the specific vendor-recommended shape in the DeepSeek-V3 technical report and the SGLang / vLLM deployment guides. The example above is illustrative; exact numbers rotate.
-
-<!-- needs-research: DeepSeek V3's optimal serving topology is specified in the DeepSeek-V3 technical report (arXiv:2412.19437) and in SGLang / vLLM deployment references; verify EP degree, TP composition, and expected collective costs against those. -->
+Verify the specific vendor-recommended shape in the DeepSeek-V3 technical report ([arXiv:2412.19437](https://arxiv.org/abs/2412.19437)) and the SGLang / vLLM deployment guides. The example above is illustrative; exact numbers rotate.
 
 ### Example E — Llama-3.2-3B at 50,000 QPS
 

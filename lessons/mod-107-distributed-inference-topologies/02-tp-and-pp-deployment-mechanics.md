@@ -19,7 +19,7 @@ By the end of it you can:
 - Verify the engine is actually sharding (not replicating), that NCCL built the right topology, and that `nvidia-smi topo -m` matches the sharding plan.
 - Recognise the three "silent fallback" modes and the health checks that catch them.
 
-<!-- needs-research: engine-specific launch-flag spellings change across releases (vLLM, SGLang, TensorRT-LLM). Verify the examples below against your pinned engine's `--help` output and release notes before committing to a config. -->
+Engine-specific launch-flag spellings change across releases (vLLM, SGLang, TensorRT-LLM). Treat every launch command below as illustrative and verify against your pinned engine's `--help` output and release notes before committing to a config.
 
 ## TP shard geometry
 
@@ -66,9 +66,7 @@ Vanilla TP has an AllReduce at the attention output and at the MLP output. Each 
 
 **Sequence parallel** (introduced in the Megatron-LM paper — see `resources.md`) splits the layer-norm, dropout, and residual tensors along the sequence dimension across the TP ranks. The result: AllReduce decomposes into AllGather + ReduceScatter, which have the same total bytes-communicated per rank as AllReduce but allow the layer-norm / residual to be done on only a slice of the sequence — saving activation memory.
 
-Most inference engines expose this as a flag ("`--enable-sequence-parallel`" or equivalent in training; inference engines inherit the pattern). At inference time the activation-memory saving matters at long context; the collective cost is unchanged.
-
-<!-- needs-research: sequence-parallel at inference is not uniformly exposed across inference engines. Verify your engine's docs; some apply it internally without a flag, some do not implement it. -->
+Sequence-parallel at inference is not uniformly exposed across inference engines — some apply it internally without a flag, some do not implement it at all; check your engine's docs. At inference time the activation-memory saving matters at long context; the collective cost is unchanged.
 
 ### Which TP degrees work
 
@@ -120,7 +118,7 @@ The implication for TTFT: the **first token** of the first request in a batch wa
 
 Some engines implement a 1F1B-like forward schedule that overlaps multiple micro-batches across stages, maximising steady-state throughput at the cost of complicated scheduling. Verify your engine's PP implementation documents the schedule it uses; the operator-visible knobs are typically `--pipeline-parallel-size` and (sometimes) `--micro-batch-size`.
 
-<!-- needs-research: inference-PP implementations in vLLM, SGLang, and TRT-LLM each have different schedulers and different maturity levels. vLLM added PP support in a later release; verify the current state. SGLang's PP maturity varies by release. TRT-LLM has had PP since early releases. -->
+Inference-PP implementations in vLLM, SGLang, and TRT-LLM each have different schedulers and different maturity levels, and the state of each changes release-to-release; check the current docs (e.g. vLLM's [parallelism and scaling guide](https://docs.vllm.ai/en/stable/serving/parallelism_scaling/)) for your pinned version before committing.
 
 ## Launch mechanics
 
@@ -165,7 +163,7 @@ Verify:
 - Each node reports 8 workers (one per GPU) that joined the Ray cluster.
 - A test request completes end-to-end and returns tokens.
 
-<!-- needs-research: vLLM's exact PP+TP launch mechanics (Ray vs. mp, env-var spellings, port layout) rotate across releases. Verify against the current `vllm serve --help` and the `distributed-serving.md` doc for your pinned version. -->
+vLLM's exact PP+TP launch mechanics (Ray vs. mp, env-var spellings, port layout) have rotated across releases — verify against the current `vllm serve --help` and the distributed-serving docs for your pinned version.
 
 ### SGLang — TP
 
@@ -198,7 +196,7 @@ trtllm-build \
 
 The TP and PP sizes are baked into the engine; changing them means a rebuild. This is a cost compared to vLLM / SGLang (which allow runtime TP changes with a restart but no rebuild).
 
-<!-- needs-research: TRT-LLM's build process has been refactored several times. The specific flag spellings and converter scripts rotate; verify against the TRT-LLM release notes and the LLM-API docs for your pinned version. -->
+TRT-LLM's build process has been refactored several times — specific flag spellings and converter scripts rotate across releases; verify against the TRT-LLM release notes and the LLM-API docs for your pinned version.
 
 ## NCCL environment and health checks
 

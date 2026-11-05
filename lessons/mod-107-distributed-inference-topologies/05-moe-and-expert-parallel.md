@@ -15,7 +15,7 @@ MoE serving is not a dense model with a few extra flags. It is a parallelism and
 - Diagnose the three common MoE failure modes (expert hotspotting, all-to-all bandwidth cliff, capacity-factor drops) and the operator fixes.
 - Cite the kernel boundary to the performance peer — the dispatch / combine kernels, the gating softmax, the expert-GEMM batching are kernel craft and route to that peer.
 
-<!-- needs-research: MoE serving is one of the fastest-changing areas in production inference. DeepSeek V3's deployment patterns, SGLang's EP support, vLLM's expert-parallel implementation, and the DeepEP / Hopper-specific all-to-all kernels have all changed within the last year. Verify every specific example against pinned release notes. -->
+MoE serving is one of the fastest-changing areas in production inference: DeepSeek-V3 deployment patterns, SGLang's EP support, vLLM's expert-parallel implementation, and the DeepEP / Hopper-specific all-to-all kernels have changed frequently. Treat every specific example in this chapter as illustrative and verify against pinned release notes before deploying.
 
 ## The MoE layer structure
 
@@ -64,9 +64,7 @@ EP = 32 (across all GPUs)   — for routed experts (one node of 8 ranks holds 64
 PP = 1
 ```
 
-Vendor-recommended shapes may differ; verify in the deployment references.
-
-<!-- needs-research: specific DeepSeek V3 serving topologies rotate; verify in the SGLang DeepSeek-V3 docs, vLLM DeepSeek guide, and the DeepSeek-V3 technical report. -->
+Vendor-recommended shapes may differ, and specific DeepSeek-V3 serving topologies rotate — verify in the SGLang DeepSeek-V3 docs, the vLLM DeepSeek guide, and the DeepSeek-V3 technical report ([arXiv:2412.19437](https://arxiv.org/abs/2412.19437)) rather than relying on the shape above.
 
 ### Composition with DP
 
@@ -145,9 +143,7 @@ The DeepSeek-V3 technical report (arXiv:2412.19437) names specific serving confi
 - Qwen1.5-MoE-A2.7B: smaller MoE with 60-expert configuration.
 - Qwen2 / Qwen2.5 MoE variants: varying expert counts.
 - Deployment patterns similar to Mixtral for the smaller variants; similar to DeepSeek for the larger ones.
-- Qwen's gating scheme has evolved across variants (verify in the model card).
-
-<!-- needs-research: specific Qwen-MoE deployment numbers (expert count, top-k, serving topology) rotate across model releases. Verify against the Qwen model card for your pinned variant. -->
+- Qwen's gating scheme, expert count, top-k, and serving topology vary across variants and rotate with new releases — verify against the model card for your pinned Qwen-MoE variant rather than from memory.
 
 ## Deployment examples
 
@@ -160,9 +156,7 @@ vllm serve mistralai/Mixtral-8x7B-Instruct-v0.1 \
     --dtype bfloat16
 ```
 
-vLLM handles Mixtral's MoE routing internally; EP is implicit (the expert ops are batched within each TP rank). Explicit `--enable-expert-parallel` is a newer feature; verify.
-
-<!-- needs-research: vLLM's MoE handling has evolved. In older releases, Mixtral was served as a specialised dense-like path; in newer releases, explicit `--enable-expert-parallel` flags exist. Verify for your pinned version. -->
+vLLM handles Mixtral's MoE routing internally; EP is implicit (the expert ops are batched within each TP rank). Explicit expert-parallel flags are a newer addition — vLLM's MoE handling has evolved from a specialised dense-like path in older releases to explicit EP configuration in newer ones; verify the flag name and semantics for your pinned version.
 
 ### SGLang — DeepSeek V3
 
@@ -175,9 +169,7 @@ python -m sglang.launch_server \
     --disable-cuda-graph    # or enable if supported for MoE
 ```
 
-SGLang's DeepSeek-V3 support includes the DeepEP integration — a specialised all-to-all kernel optimised for Hopper. Enabling it may require specific flags; verify against the SGLang DeepSeek-V3 serving guide.
-
-<!-- needs-research: SGLang's EP flags (`--ep-size`, `--enable-ep-moe`, `--enable-deepep-moe`, etc.) have changed. Verify. -->
+SGLang's DeepSeek-V3 support includes the DeepEP integration — a specialised all-to-all kernel optimised for Hopper. SGLang's EP flags (`--ep-size`, `--enable-ep-moe`, `--enable-deepep-moe`, and relatives) have changed release-to-release; verify the current flag names and enablement requirements against the SGLang DeepSeek-V3 serving guide.
 
 ### TensorRT-LLM — Mixtral / DeepSeek
 
@@ -192,9 +184,7 @@ trtllm-build \
     --max_batch_size 16
 ```
 
-Serving via Triton + `tensorrtllm_backend`. The MoE plugin configures expert distribution at build time; runtime EP changes require rebuild.
-
-<!-- needs-research: TRT-LLM MoE plugin flags rotate; verify. -->
+Serving via Triton + `tensorrtllm_backend`. The MoE plugin configures expert distribution at build time; runtime EP changes require rebuild. TRT-LLM MoE plugin flag spellings have rotated across releases — verify against the TRT-LLM release notes for your pinned version before baking an engine.
 
 ## Measuring per-expert utilization
 
@@ -232,9 +222,7 @@ Some engines expose a "balanced-routing" mode that re-routes overflow tokens to 
 
 ### Mitigation 3 — expert redistribution
 
-Rearrange which experts live on which ranks so hot experts are not clustered on one rank. For DeepSeek-V3, the research literature on "expert placement" and "expert redistribution" discusses this; some engines expose it as a config knob.
-
-<!-- needs-research: expert-redistribution support in vLLM / SGLang / TRT-LLM rotates. Verify for your pinned version. -->
+Rearrange which experts live on which ranks so hot experts are not clustered on one rank. For DeepSeek-V3, the research literature on "expert placement" and "expert redistribution" discusses this; some engines expose it as a config knob, and support in vLLM / SGLang / TRT-LLM rotates across releases — verify whether your pinned version exposes a redistribution hook before planning around one.
 
 ### Mitigation 4 — speculative / shadow experts
 

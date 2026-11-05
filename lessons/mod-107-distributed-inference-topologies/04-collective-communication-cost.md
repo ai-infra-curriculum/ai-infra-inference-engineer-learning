@@ -20,7 +20,7 @@ By the end of it you can:
 - Reason about the overlap-with-compute discipline — when the collective lives inside a compute shadow, and when it doesn't.
 - Know what you can tune at operator depth (`NCCL_ALGO`, `NCCL_PROTO`, `NCCL_P2P_LEVEL`, `NCCL_IB_HCA`, `NCCL_SOCKET_IFNAME`, env sysconfig) and where the kernel-depth tuning lives (performance peer).
 
-<!-- needs-research: NCCL version matters. NCCL 2.20+ added CollNet improvements and SHARP integration improvements; the specific algorithm choices below are oriented at NCCL 2.18-2.26 range. Verify against the NCCL release notes for your pinned version. -->
+NCCL version matters — algorithm selection and in-network-reduction integration have evolved across releases, so the algorithm choices discussed below are directional rather than exact; verify against the NCCL release notes for your pinned version.
 
 ## The three TP collectives and their complexity
 
@@ -48,9 +48,7 @@ NCCL implements two main algorithms:
 
 NCCL's auto-tuner picks ring for large messages and tree for small ones. The crossover is message-size-dependent; `NCCL_ALGO` overrides. **The operator rarely sets `NCCL_ALGO`** — defaults are usually right; if the auto-tuner is making a bad choice at your workload's message-size curve, that's a performance-peer conversation.
 
-The CollNet / SHARP in-network reductions are a third algorithm family — enabled on Mellanox fabrics with SHARP-capable switches. They offload the reduction to the switch, dramatically improving large-message AllReduce performance at scale. Operator sets `NCCL_COLLNET_ENABLE=1`; performance peer tunes.
-
-<!-- needs-research: SHARP / CollNet enablement and benefits have evolved; verify against the current NCCL and NVIDIA SHARP documentation for your fabric. -->
+The CollNet / SHARP in-network reductions are a third algorithm family — enabled on Mellanox fabrics with SHARP-capable switches. They offload the reduction to the switch, which can improve large-message AllReduce at scale; the operator sets `NCCL_COLLNET_ENABLE=1`, the performance peer tunes. Exact enablement requirements and the realised speed-up have evolved — check the current NCCL and NVIDIA SHARP docs for your fabric before promising a number.
 
 ## NVLink vs. InfiniBand — the two regimes
 
@@ -124,9 +122,7 @@ For AllReduce at 1 GiB on the same node: bus-bw at the higher end, 350-430 GB/s 
 
 For AllReduce across two nodes over 8 × ConnectX-7 NICs (one per GPU) at 1 MiB: the per-rank bus-bw is much lower — the collective is bottlenecked by the slowest link in the ring, which is the IB hop. Measured bus-bw is typically ~30-45 GB/s per rank (close to single-NIC bandwidth).
 
-**If your measurements are more than 2× below these ballparks, your fleet has a placement or driver problem**, not an engine problem. Chapter 06 names the diagnostic flow.
-
-<!-- needs-research: specific nccl-tests numbers for H100 SXM / H200 SXM / B200 and for CX-6/CX-7/CX-8 fabrics rotate; the ballparks above are directional. Verify against the hardware vendor's published nccl-tests results and your own measurements. -->
+**If your measurements are more than 2× below these ballparks, your fleet has a placement or driver problem**, not an engine problem. Chapter 06 names the diagnostic flow. The specific `nccl-tests` numbers for H100 SXM / H200 SXM / B200 and for CX-6/CX-7/CX-8 fabrics rotate across firmware and driver generations — treat the ranges above as directional; your own measurements are authoritative.
 
 ## The overlap-with-compute discipline
 
@@ -147,9 +143,7 @@ Engine-level implementations vary:
 - **SGLang** also overlaps via dedicated streams; the chunked prefill scheduler composes with overlap.
 - **TRT-LLM** generates fused kernels that interleave communication and compute at the TensorRT-plan level.
 
-The exact overlap efficiency is kernel-level; the operator diagnoses "is overlap happening" via Nsight Systems, and routes "overlap efficiency low" to the performance peer.
-
-<!-- needs-research: engine-level overlap behaviour has evolved. vLLM's PipelineParallelExecutor added overlap support in a later release; SGLang's overlap behaviour varies by batch regime; TRT-LLM varies by build. Verify against release notes. -->
+The exact overlap efficiency is kernel-level; the operator diagnoses "is overlap happening" via Nsight Systems, and routes "overlap efficiency low" to the performance peer. Engine-level overlap behaviour has evolved across releases (and often varies by batch regime and build options) — verify against your pinned release's notes rather than assuming the behaviour above.
 
 ## Operator-level NCCL knobs
 

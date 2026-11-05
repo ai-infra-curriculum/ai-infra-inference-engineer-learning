@@ -20,7 +20,7 @@ By the end of it you can:
 - Apply the placement fix — CPU / GPU affinity, NUMA binding, NIC-to-GPU pairing, rack-local placement.
 - Write the handoff bundle when the diagnosis exceeds operator depth (hardware repair, fabric team, performance peer).
 
-<!-- needs-research: specific tool versions (nvidia-smi, lstopo, nccl-tests) have evolved; the ballpark observations below are directional. Verify tool output against your fleet's exact hardware. -->
+Specific tool versions (nvidia-smi, lstopo, nccl-tests) evolve, and output formats and flags drift with them; treat the ballpark numbers and command-line details below as directional and verify tool output against your fleet's exact hardware.
 
 ## The four canonical scaling cliffs
 
@@ -186,9 +186,7 @@ Runs a battery of GPU health checks. Takes minutes; useful before admitting a no
 
 ### Nsight Systems
 
-NVIDIA's system-level profiler. Produces per-rank, per-stream timelines showing compute kernels, collectives, and host-side events. For scaling-cliff diagnosis, run with `--trace=cuda,nvtx,nccl` on all ranks simultaneously; export; compare per-rank timelines.
-
-<!-- needs-research: Nsight Systems command-line flags and options evolve across releases; verify. -->
+NVIDIA's system-level profiler. Produces per-rank, per-stream timelines showing compute kernels, collectives, and host-side events. For scaling-cliff diagnosis, run with a trace that includes CUDA, NVTX, and NCCL on all ranks simultaneously; export; compare per-rank timelines. Nsight Systems command-line flags evolve across releases — verify the exact `--trace=` spelling and available backends against your installed `nsys --help`.
 
 ### Engine-native per-rank metrics
 
