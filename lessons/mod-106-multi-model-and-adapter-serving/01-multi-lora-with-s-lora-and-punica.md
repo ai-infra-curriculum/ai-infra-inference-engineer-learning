@@ -16,7 +16,7 @@ By the end of this chapter you can:
 - Launch vLLM and SGLang with multi-LoRA enabled and verify the engine is batching heterogeneous adapters rather than serializing them.
 - Recognise the kernel-level signatures (ragged-rank penalty, warm-up stall on first use) and route them correctly between this module and the performance peer.
 
-<!-- needs-research: multi-LoRA engine support rotates between releases. vLLM, SGLang, and TRT-LLM each ship multi-LoRA with different flag spellings, rank constraints, and default behaviours. Verify the specific flag set below against your pinned engine version. -->
+The specific flag set and per-request field names below are drawn from current vLLM ([docs.vllm.ai LoRA guide](https://docs.vllm.ai/en/latest/features/lora/)) and SGLang ([docs.sglang.io LoRA guide](https://docs.sglang.io/docs/advanced_features/lora)); defaults and rank constraints still rotate between engine releases, so pin to the version your fleet runs.
 
 ## The structural picture — base-plus-adapter forward pass
 
@@ -80,9 +80,7 @@ The engine consumes this registry two ways:
 
 ### Request shape
 
-vLLM's OpenAI-compatible path accepts the adapter via `model` (the LoRA ID is treated as a model name) or via an `lora_adapters` field (verify your version). SGLang uses `lora_path` on the request. TRT-LLM uses a separate adapter-id parameter in the inflight-batcher. Three different shapes; one semantic.
-
-<!-- needs-research: the exact request-time field names for selecting a LoRA have changed across vLLM, SGLang, and TRT-LLM releases. Verify against the pinned engine's API reference. The vLLM project's "Multi-LoRA inference" docs page is the authoritative reference. -->
+vLLM's OpenAI-compatible path accepts the adapter by passing the loaded LoRA name in the request's `model` field — the engine registers each adapter under its own served-model name alongside the base ([vLLM LoRA docs](https://docs.vllm.ai/en/latest/features/lora/)). SGLang accepts a per-request `lora_path` field on `/generate`, with one entry per batched sequence (`null` for base-only) ([SGLang LoRA docs](https://docs.sglang.io/docs/advanced_features/lora)). TRT-LLM uses a separate adapter-id parameter in the inflight-batcher. Three different shapes; one semantic.
 
 ### Rank, α, target modules — what each means
 
@@ -118,7 +116,7 @@ At r = 16, FP16 (2 bytes/elem):  2 498 560 · 16 · 2 ≈ 76 MiB per adapter.
 At r = 16, FP8  (1 byte /elem):  2 498 560 · 16 · 1 ≈ 38 MiB per adapter.
 ```
 
-<!-- needs-research: exact LoRA sizes depend on which target modules the adapter touches. Confirm against the adapter card and the actual safetensors file sizes before planning a warm set. -->
+These numbers assume the target-module set listed above. Adapters that touch fewer modules (e.g., Q/V only) are proportionally smaller; always sanity-check against the adapter card and the actual safetensors file size before planning a warm set.
 
 The HBM budget for the warm set is then:
 
@@ -161,7 +159,7 @@ Key flags (verify spellings against your pinned version):
 - `--max-cpu-loras` is the number of adapters cached on host DRAM for lazy load into HBM. Chapter 04 operates this.
 - `--lora-modules` registers startup adapters by `name=path` pairs.
 
-<!-- needs-research: vLLM has added a REST endpoint for dynamic adapter load / unload at runtime; verify current path (`POST /v1/load_lora_adapter`?) against your release's `vllm serve --help` or docs. -->
+For runtime loading, vLLM exposes `POST /v1/load_lora_adapter` (body: `lora_name`, `lora_path`) and `POST /v1/unload_lora_adapter` (body: `lora_name`), gated behind `VLLM_ALLOW_RUNTIME_LORA_UPDATING=True`; the vLLM docs explicitly warn against enabling this in untrusted/production environments ([vLLM LoRA — dynamic serving](https://docs.vllm.ai/en/latest/features/lora/)).
 
 ### SGLang
 
@@ -172,7 +170,7 @@ python -m sglang.launch_server \
     --max-loras-per-batch 16
 ```
 
-<!-- needs-research: SGLang's multi-LoRA flag spellings and the exact per-request mechanism rotate between releases. Check the SGLang server-args reference (`python -m sglang.launch_server --help`). -->
+SGLang also exposes `--enable-lora`, `--max-lora-rank`, `--max-loaded-loras` (shelf cap), and dynamic `POST /load_lora_adapter` / `POST /unload_lora_adapter` endpoints; per-request selection is a `lora_path` list on `/generate` with one entry per sequence ([SGLang LoRA docs](https://docs.sglang.io/docs/advanced_features/lora), [SGLang server args](https://docs.sglang.io/docs/advanced_features/server_arguments)).
 
 ### TRT-LLM
 
@@ -201,9 +199,7 @@ The adapter was trained on `Llama-3-8B-Instruct` (3.0); the fleet serves `Llama-
 
 ### Ragged-rank penalty
 
-A batch contains four requests at rank 8, four at rank 32, four at rank 64. The segmented matmul must handle three different inner dimensions in the same kernel; the kernel pads to the max rank (rank 64), wasting work on the rank-8 requests. Observable as reduced throughput at mixed-rank batches vs. homogeneous-rank batches. Mitigation: tier your adapters by rank and admit mixed-rank batches only when the throughput budget allows. S-LoRA's unified paging specifically targets this; vLLM / SGLang implementations may have residual packing cost — profile.
-
-<!-- needs-research: current state of ragged-rank handling in vLLM Punica and SGLang multi-LoRA kernels. The research literature improved on Punica's original homogeneous-rank limit; the specific state in a given engine release should be verified against the engine's release notes. -->
+A batch contains four requests at rank 8, four at rank 32, four at rank 64. The segmented matmul must handle three different inner dimensions in the same kernel; the kernel pads to the max rank (rank 64), wasting work on the rank-8 requests. Observable as reduced throughput at mixed-rank batches vs. homogeneous-rank batches. Both vLLM's Punica-derived kernels ([vLLM Punica wrapper](https://docs.vllm.ai/en/latest/api/vllm/lora/punica_wrapper/punica_gpu/)) and SGLang's LoRA path accept heterogeneous ranks in one batch, but every adapter's rank must be ≤ the startup-time `--max-lora-rank` and the kernel pads to that cap — so a fleet with wildly ragged ranks still pays a packing tax. Mitigation: tier your adapters by rank and admit mixed-rank batches only when the throughput budget allows; profile the mixed-rank path on your engine version.
 
 ### Warm-up stall on first use
 

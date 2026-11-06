@@ -20,7 +20,7 @@ By the end of this chapter you can:
 - Instrument the loader with the right axes (hit-rate per tier, cold-start-latency distribution, warm-set occupancy, promotion / eviction rate).
 - Compose this loader with chapter 03's router — adapter residency becomes a routing signal.
 
-<!-- needs-research: vLLM, SGLang, and TRT-LLM each handle adapter residency differently; some expose explicit `max_cpu_loras` and a dynamic `/load_lora_adapter` endpoint, others defer to engine-internal LRU. Verify current state against your pinned engine docs. -->
+Both vLLM and SGLang expose an explicit shelf cap (`--max-cpu-loras` on vLLM, `--max-loaded-loras` on SGLang) plus `POST /v1/load_lora_adapter` / `POST /v1/unload_lora_adapter` endpoints for runtime load and unload — on vLLM gated behind `VLLM_ALLOW_RUNTIME_LORA_UPDATING=True` ([vLLM LoRA docs](https://docs.vllm.ai/en/latest/features/lora/), [SGLang LoRA docs](https://docs.sglang.io/docs/advanced_features/lora)). TRT-LLM defers to its inflight-batcher LoRA cache manager. Pin to your engine version before relying on any specific endpoint.
 
 ## The three-tier residency model
 
@@ -91,9 +91,7 @@ Three implementations:
 - **Loader sidecar.** A separate process watches the adapter-request stream, pre-loads adapters it predicts will be used, and uses the engine's load endpoint to populate the warm set. Allows richer policy than the engine's built-in LRU.
 - **Load-on-request router hook.** The router (chapter 03) checks whether the adapter is in the engine's warm set *before* routing; if not, it either (a) blocks and triggers a load, (b) routes to a different fleet that has the adapter, or (c) sends to a provider that supports arbitrary adapters.
 
-Option (c) is interesting: Fireworks, Together, and some other providers offer "dynamic LoRA" APIs where you can upload a LoRA and serve it. On a self-hosted fleet, the cold-start cost of a never-seen adapter is 500 ms – 10 s; on a provider's shared fleet, it may be 100 ms if the provider has already warmed it. The router can account for this and route cold-first requests to the provider, warm ones to self-host — a two-tier *fleet* arrangement that mirrors the two-tier *adapter* residency.
-
-<!-- needs-research: provider APIs for LoRA (Fireworks' "dedicated LoRA" / Together's "custom LoRA" / Anyscale) evolve rapidly. Verify current offer, pricing, cold-start characteristics against each provider's current docs. -->
+Option (c) is interesting: several providers offer "dynamic LoRA" APIs where you can upload a LoRA and serve it. Fireworks' [LoRA Addons / Multi-LoRA Serving](https://docs.fireworks.ai/fine-tuning/deploying-loras) and Together's [Dedicated Endpoints LoRA inference](https://docs.together.ai/docs/dedicated-endpoints/adapter) are both current; Anyscale Endpoints (which had offered a similar serverless LoRA surface) was [sunset on 1 August 2024](https://www.anyscale.com/blog/sunsetting-anyscale-endpoints) and is no longer an option. On a self-hosted fleet, the cold-start cost of a never-seen adapter is 500 ms – 10 s; on a provider's shared fleet, it may be 100 ms if the provider has already warmed it. The router can account for this and route cold-first requests to the provider, warm ones to self-host — a two-tier *fleet* arrangement that mirrors the two-tier *adapter* residency. Pricing and cold-start characteristics still rotate, so verify against each provider's current docs.
 
 ## Eviction policies
 

@@ -16,7 +16,7 @@ By the end of this chapter you can:
 - Launch and verify a two-model co-location on a single GPU using at least one of the mechanisms.
 - Recognise the noisy-neighbour signature of soft sharing and route the fix correctly.
 
-<!-- needs-research: NVIDIA MIG partition profiles, MPS version support, and Kubernetes DRA availability change across driver / plugin releases. Verify the specific partition profiles, isolation guarantees, and K8s versions against vendor docs before planning a deployment. -->
+Partition tables, MPS behaviour, and Kubernetes DRA API versions all evolve across driver, plugin, and Kubernetes releases. The citations in this chapter point to current primary sources (NVIDIA MIG User Guide, MPS Service User's Manual, Kubernetes DRA docs), but always confirm against the exact driver / plugin / cluster version your fleet runs before planning a deployment.
 
 ## The three layers of co-location
 
@@ -59,7 +59,7 @@ The engine loads multiple models into one process and routes requests to the rig
 - `4g.40gb` — 4/7 of SMs, 40 GiB HBM. Single instance.
 - `7g.80gb` — the full GPU; one instance.
 
-<!-- needs-research: MIG profile tables rotate with hardware generation and driver. H100 and B200 profiles differ from A100's; always consult NVIDIA MIG User Guide for the version your fleet runs. -->
+The table above matches the H100 80 GB SXM5 / PCIe entries in the current [NVIDIA MIG User Guide's supported profiles](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/supported-mig-profiles.html); an additional `1g.10gb+me` (media-extensions) variant exists for workloads that need the dedicated media engine. Blackwell and GB200 profiles differ — consult the same guide for the hardware generation your fleet runs.
 
 **What this gives you:**
 
@@ -77,7 +77,7 @@ MIG is the right primitive for **small models that need latency SLOs** — safet
 
 ### Layer 2b — MPS (hardware soft partitioning)
 
-**MPS** (NVIDIA Multi-Process Service) is a daemon that multiplexes multiple CUDA client processes onto one GPU's SMs. Clients submit work to one CUDA context (owned by the MPS daemon) that interleaves their work. In recent driver releases, MPS supports **per-client SM percentage limits** and **per-client memory limits**, giving some control over resource allocation.
+**MPS** (NVIDIA Multi-Process Service) is a daemon that multiplexes multiple CUDA client processes onto one GPU's SMs. Clients submit work to one CUDA context (owned by the MPS daemon) that interleaves their work. Volta-generation MPS introduced the per-client SM-percentage cap via `CUDA_MPS_ACTIVE_THREAD_PERCENTAGE`; CUDA 11.5 added the per-client pinned-device-memory cap via `CUDA_MPS_PINNED_DEVICE_MEM_LIMIT` ([NVIDIA MPS environment variables](https://docs.nvidia.com/deploy/mps/appendix-environment-variables.html), [CUDA 11.5 release notes](https://developer.nvidia.com/blog/revealing-new-features-in-the-cuda-11-5-toolkit/)).
 
 **What this gives you:**
 
@@ -87,11 +87,9 @@ MIG is the right primitive for **small models that need latency SLOs** — safet
 
 **What it does not give you:**
 
-- **Hard isolation.** A noisy client can still affect another's SM scheduling. Memory limits are enforced but SM percentage is a soft hint, not a guarantee.
+- **Hard isolation.** A noisy client can still affect another's SM scheduling. Memory limits are enforced but SM percentage is a soft hint, not a guarantee (since CUDA 11.5 the thread-percentage cap became a soft ceiling that processes can exceed when peers are idle).
 - **ECC scope.** An uncorrectable ECC error takes down the whole GPU.
 - **Determinism.** Latency distributions widen under contention.
-
-<!-- needs-research: MPS evolved substantially over driver releases (CUDA 11.x added per-client limits; CUDA 12.x extended them). Confirm the current isolation guarantees against the NVIDIA MPS Service User's Manual for your driver. -->
 
 MPS is the right primitive for **throughput-oriented small-model workloads** where latency variance can be tolerated — bulk embedding, background classification — and for pre-production environments where fast iteration beats hard isolation.
 
@@ -114,9 +112,7 @@ K8s schedules the pod to a node that can satisfy the claim; the DRA driver mater
 **What it does not give you:**
 
 - **A new isolation primitive.** DRA is a scheduling abstraction over MIG / MPS / full GPUs; it inherits each primitive's trade-offs.
-- **Universal support.** DRA is relatively recent; some clusters still run on the earlier device-plugin model. Verify your cluster version.
-
-<!-- needs-research: DRA moved from beta toward stable across Kubernetes 1.30 → 1.33 releases; the NVIDIA DRA driver's status also evolved. Verify both the Kubernetes version and the NVIDIA driver version against the current KEP and vendor docs before relying on DRA in production. -->
+- **Universal support.** DRA entered alpha in Kubernetes v1.26, was redesigned around structured parameters (KEP-4381) in v1.31, graduated to beta in v1.32, and reached GA in v1.34 with `resource.k8s.io/v1` ([Kubernetes DRA concepts](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/), [KEP-4381](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/4381-dra-structured-parameters)). The NVIDIA DRA driver ([kubernetes-sigs/dra-driver-nvidia-gpu](https://github.com/kubernetes-sigs/dra-driver-nvidia-gpu), previously under `NVIDIA/`) ships ComputeDomains (multi-node NVLink) as officially supported while per-GPU allocation is still gated behind an opt-in — verify both your cluster version and the driver feature set before relying on DRA in production; many clusters still run the earlier device-plugin model.
 
 ### Layer 4 — Process-level (one pod per model, binpacked)
 
@@ -149,9 +145,7 @@ A workload that *needs* P99 isolation (customer-facing latency SLO on a small mo
 
 ### Engine-level — vLLM OpenAI server with multiple models
 
-<!-- needs-research: vLLM's multi-model OpenAI server support has evolved; the standard pattern remained "one process per model" for a long time. Verify current support for multi-model in a single vLLM process against the latest release notes before planning around it. -->
-
-The historical vLLM pattern is one process per model with K8s binpacking (layer 4). Recent vLLM versions ship a multi-model server variant that lets one process serve multiple `--served-model-name` tags from one Python process over one engine scheduler. Check your pinned version.
+A single vLLM `OpenAIServer` process still serves exactly one base model (plus any LoRA adapters attached to it); to co-locate distinct base models you run one vLLM process per model and front them with an external router (nginx, LiteLLM proxy, llm-d, production-stack) ([vLLM discussion — Run multiple models](https://discuss.vllm.ai/t/run-multiple-models/1181)). For true in-process multi-model co-location, use Triton Inference Server (below) or the one-pod-per-model binpacked layer.
 
 ### Engine-level — Triton model-ensemble
 
@@ -205,7 +199,7 @@ nvidia-smi -L
 
 Each `MIG-...` UUID is targetable from `CUDA_VISIBLE_DEVICES=MIG-<UUID>` or via the K8s GPU operator's MIG strategy. Launch a vLLM or Triton process pinned to one MIG and it sees that partition as `cuda:0`.
 
-<!-- needs-research: not all GPUs support the same MIG topologies; some H100 PCIe variants are MIG-capable, some SXM variants are not configurable in all patterns. Verify `nvidia-smi mig --list-gpu-instance-profiles` on the exact SKU. -->
+All H100 SKUs (PCIe 80 / 94 GB and SXM5 80 / 94 GB) are MIG-capable with the profiles above, but older generations are not — the A40 and A10, for example, do not support MIG at all. Always confirm with `nvidia-smi mig --list-gpu-instance-profiles` on the exact SKU and driver your fleet runs ([NVIDIA MIG — supported GPUs](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/supported-gpus.html)).
 
 ### Hardware — MPS
 
@@ -256,7 +250,7 @@ spec:
       resourceClaimName: classifier-gpu
 ```
 
-<!-- needs-research: DRA CRD shapes are not yet frozen; the v1alpha3 → v1beta1 → v1 transition changes field names. Treat the above as structural reference and verify against your cluster's DRA version. -->
+The DRA API has progressed `v1alpha3` → `v1beta1` (Kubernetes 1.32) → `v1beta2` (1.33) → `v1` (1.34 GA), with field renames along the way — most notably `ResourceClass` → `DeviceClass` and `resourceClassName` → `deviceClassName` inside structured device requests. Treat the snippet above as structural; use `resource.k8s.io/v1` on 1.34+ clusters and verify the exact shape against your cluster's DRA version ([Kubernetes DRA concepts](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)).
 
 ## Common failure modes
 

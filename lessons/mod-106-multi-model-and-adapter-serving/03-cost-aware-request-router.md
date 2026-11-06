@@ -18,7 +18,7 @@ By the end of this chapter you can:
 - Compose self-hosted and external providers behind one OpenAI-compatible endpoint, with provider fallback on failure.
 - Draw the boundary to the application-side SDK ([`llm-application-developer`](https://github.com/ai-engineering-curriculum/llm-application-developer-learning), peer, level 25) — this chapter owns the server, that peer owns the client.
 
-<!-- needs-research: LiteLLM, OpenRouter, and other router projects evolve rapidly. Verify the specific config shapes, fallback semantics, and provider plugin availability against the pinned version of whichever router implementation you adopt. -->
+The specific config shapes and fallback semantics in this chapter are drawn from current [LiteLLM proxy docs](https://docs.litellm.ai/docs/proxy/configs); fallback shape, provider plugin availability, and router strategies evolve between releases, so pin to whichever router implementation you adopt.
 
 ## The five decisions
 
@@ -138,7 +138,7 @@ A smarter router reads **real-time capacity signals** from each self-hosted back
 
 A backend that is approaching queue-depth limits is *de-prioritised*; a backend that is comfortable is *preferred*. The router does not need to be a scheduler, but it needs to know when to stop sending to a hot backend.
 
-<!-- needs-research: in-tree router implementations in vLLM / SGLang / Dynamo expose capacity metrics via different endpoints. The specific metric names ("vllm:num_requests_waiting", "sglang:queue_depth", etc.) rotate; verify against the pinned engine. -->
+Metric names differ per engine and rotate across releases. vLLM exports queue depth as `vllm:num_requests_waiting` (Prometheus text format at `/metrics`); SGLang exports `sglang:num_queue_reqs` / `sglang:num_running_reqs` (with a naming migration to underscore-prefixed `sglang_...` in 0.5.4+ — see [sgl-project/sglang#45418](https://github.com/sgl-project/sglang/issues/45418)). Verify the exact names against your pinned engine.
 
 ### Provider adapters
 
@@ -314,7 +314,7 @@ general_settings:
   database_url: postgresql://...
 ```
 
-<!-- needs-research: LiteLLM's config schema has evolved; the above is a structural reference. For a production deployment, consult the LiteLLM project docs and release notes for the exact field spellings and feature set. -->
+The top-level keys (`model_list`, `router_settings`, `general_settings`) and the nested fields used above (`litellm_params.model`, `api_base`, `api_key`, `routing_strategy`, `fallbacks`, `master_key`, `database_url`) are all in the current [LiteLLM proxy config reference](https://docs.litellm.ai/docs/proxy/configs); routing strategies include `simple-shuffle` (default), `least-busy`, `usage-based-routing-v2`, `latency-based-routing`, and `cost-based-routing`. For a production deployment, pin to the LiteLLM release and consult its changelog.
 
 The decision whether to adopt LiteLLM-as-proxy, embed it as a library in a custom router, or author from scratch depends on operational preferences; the **shape** of the config is a reasonable template either way.
 

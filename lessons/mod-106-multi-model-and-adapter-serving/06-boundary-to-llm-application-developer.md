@@ -19,7 +19,7 @@ By the end of this chapter you can:
 - Negotiate the interface — what headers the server publishes downward, what metadata the client sends upward, what guarantees each side makes.
 - Avoid the common anti-patterns (app-level retry around a server that already retries; server-level product UX decisions; mixed accounting that double-counts cost).
 
-<!-- needs-research: the application-developer track's exact scope is set by the AI Engineering family; the cross-family boundary is specified in `CURRICULUM.md`. Verify the peer's current scope statement before citing specific chapter-level handoffs. -->
+The peer's exact scope is owned by the AI Engineering family; see the "Out of scope" clause and the mod-106 boundary line in [`CURRICULUM.md`](../../CURRICULUM.md) for the authoritative handoff statement. Treat the responsibilities enumerated here as structural, not chapter-pinned.
 
 ## The two sides
 

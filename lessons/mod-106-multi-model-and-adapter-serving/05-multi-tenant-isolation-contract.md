@@ -22,7 +22,7 @@ By the end of this chapter you can:
 - Compose the data-boundary clause with module 104's cross-tenant KV sharing policy — including the opt-out and audit requirements.
 - Author the audit trail that proves the contract holds.
 
-<!-- needs-research: specific tenant-isolation implementations vary across platforms; some run per-tenant fleets, some run shared fleets with admission control, some run both. The contract shape here is implementation-agnostic; adapt the enforcement to your fleet. -->
+The contract shape authored here is deliberately implementation-agnostic — concrete fleet topologies (per-tenant dedicated fleets, shared pools with admission control, or hybrid) vary by platform. Adapt the enforcement loci to your fleet.
 
 ## The four axes
 
@@ -180,9 +180,7 @@ The engine's scheduler (module 103) can accept priority on each request. Where t
 - Silver and bronze take fair-share of what gold leaves.
 - Preemption prefers lower-priority requests (preempt bronze before silver before gold).
 
-vLLM, SGLang, and TRT-LLM each have different levels of priority support — some have explicit priority queues; some only have FIFO. **Verify your engine's support surface before promising priority-level SLOs.**
-
-<!-- needs-research: engine-level priority support rotates between releases. vLLM scheduler priority flags, SGLang's priority mechanism, TRT-LLM's inflight-batcher priority — all have specific flags and limits. Verify against the pinned engine. -->
+vLLM, SGLang, and TRT-LLM each have different levels of priority support — some have explicit priority queues; some only have FIFO. vLLM exposes `--scheduling-policy priority` plus a per-request integer `priority` field (lower = earlier; under KV pressure the lowest-priority running request is preempted) ([vLLM scheduler config](https://docs.vllm.ai/en/stable/configuration/engine_args/)). SGLang exposes `--enable-priority-scheduling`, `--schedule-policy priority`, and a per-request `priority` field with configurable preemption threshold ([SGLang server args](https://docs.sglang.io/docs/advanced_features/server_arguments)). TRT-LLM's inflight batcher accepts a priority on each request through its C++ / Python runtime API. Flags and defaults rotate between releases — **verify your engine's support surface before promising priority-level SLOs.**
 
 ### Layer 3 — Fair-share and token-bucket
 
@@ -208,9 +206,7 @@ The data-boundary axis composes with module 104's cross-tenant KV sharing. Three
 
 The engine's prefix cache is keyed by `(tenant_id, prefix_hash)` rather than just `prefix_hash`. Two tenants with identical system prompts never share a KV block. This is a direct cost — the shared system-prompt KV benefit is lost. But it is also the cleanest isolation.
 
-Module 104 chapter 06 covers how specific engines implement this: vLLM's APC (Automatic Prefix Caching) has a per-tenant namespace flag in some versions; SGLang's radix cache can be partitioned per tenant. **Verify current support against your pinned engine.**
-
-<!-- needs-research: cross-tenant KV sharing opt-out is a feature that varies by engine release. vLLM's APC-isolation, SGLang's radix-namespace — flag spellings rotate. Verify before relying on. -->
+Module 104 chapter 06 covers how specific engines implement this: both vLLM and SGLang implement the opt-out through a per-request `cache_salt` string that is mixed into the prefix-cache hash so entries with different salts never share a block ([vLLM security guide](https://docs.vllm.ai/en/stable/usage/security/), [SGLang radix cache](https://docs.sglang.io/docs/advanced_features/cache)). The vLLM docs explicitly caveat that this is a timing-side-channel mitigation, not a hard tenant boundary within a shared process — for strict isolation, run a dedicated instance per tenant. SGLang has a known gap where `cache_salt` is ignored on LMCache external tiers ([sgl-project/sglang#37160](https://github.com/sgl-project/sglang/issues/37160)). **Verify current support — and salt plumbing through any cache tier you depend on — against your pinned engine.**
 
 ### Control 2 — Adapter visibility
 
