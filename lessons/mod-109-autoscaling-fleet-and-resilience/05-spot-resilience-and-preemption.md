@@ -32,7 +32,7 @@ By the end of this chapter you can:
 - Design failover routing that catches the request a drained replica would have served.
 - Compose with chapter 04's warm pool and chapter 06's multi-provider routing.
 
-<!-- needs-research: cloud preemption-notice windows rotate — AWS spot was 2 minutes historically but EC2 spot interruption may be different for GPU instance types; GCP preemptible has ~30s; Azure Spot has ~30s. Always verify against the current cloud documentation for the specific instance type. -->
+Cloud preemption-notice windows per current docs: AWS EC2 Spot is a 2-minute warning (<https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html>, with no documented shorter window for GPU instance types); GCP Spot/preemptible is best-effort up to 30 seconds, with an opt-in 120-second notice available (<https://cloud.google.com/compute/docs/instances/spot>); Azure Spot is best-effort 30 seconds via Scheduled Events (<https://learn.microsoft.com/en-us/azure/virtual-machines/spot-vms>). Always re-verify against current cloud docs for the specific instance type.
 
 ## The spot preemption signal
 
@@ -41,7 +41,7 @@ Each cloud emits a preemption signal through its instance metadata service (IMDS
 ### AWS — Spot interruption notice
 
 - Signal path: `/latest/meta-data/spot/instance-action` via IMDSv2. Returns a JSON with `action` and `time` (the termination moment).
-- Window: the **EC2 Spot interruption notice** is documented to provide a 2-minute warning for standard EC2 instances; GPU instance types (p4d, p5) may have a shorter window in practice — always verify current docs. For the chapter purposes we assume **60 seconds** as a conservative planning number.
+- Window: AWS documents a **2-minute** warning for EC2 Spot Instance interruption with no shorter window called out for GPU instance types (see <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html>). Design for the documented window but treat it as best-effort — planning for a conservative sub-window (e.g. ~60 seconds of usable drain) leaves headroom.
 - Spot rebalance recommendation (longer-lead, less-certain): `/latest/meta-data/events/recommendations/rebalance` — an earlier signal that AWS *may* reclaim the instance, useful for speculative drain.
 
 Reference: <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-interruptions.html>.
@@ -69,9 +69,7 @@ Each cloud has an open-source handler that watches the IMDS and taints the node 
 - **GCP** — GKE's node-problem-detector handles preemption; standalone controllers also exist.
 - **Azure** — the `kured` family or custom controllers using Scheduled Events.
 
-Install one of these on the GPU node pool that runs spot. When a preemption arrives, the handler cordons the node and sends `SIGTERM` to pods; the pod's `preStop` hook and / or signal handler executes the drain.
-
-<!-- needs-research: the aws-node-termination-handler has multiple modes (IMDS-only, SQS-based with multi-node events, etc.). For GPU workloads, IMDS-based with the "rebalance" signal is the common shape; verify against the handler's current docs. -->
+Install one of these on the GPU node pool that runs spot. When a preemption arrives, the handler cordons the node and sends `SIGTERM` to pods; the pod's `preStop` hook and / or signal handler executes the drain. (`aws-node-termination-handler` ships two mutually-exclusive modes — an IMDS Processor DaemonSet that polls IMDS for the spot ITN, scheduled events, rebalance recommendations, and ASG lifecycle state, and a Queue Processor Deployment consuming an SQS queue fed by EventBridge; toggle via `enableSqsTerminationDraining`. For GPU workloads the IMDS Processor with the rebalance signal is the common shape — see <https://github.com/aws/aws-node-termination-handler>.)
 
 ## The drain protocol
 
@@ -144,9 +142,7 @@ def handle_sigterm(signum, frame):
 signal.signal(signal.SIGTERM, handle_sigterm)
 ```
 
-Both vLLM and SGLang expose equivalents; the TRT-LLM / Triton stack has Triton's graceful-shutdown behaviour. Verify your engine's drain interface against its docs.
-
-<!-- needs-research: vLLM and SGLang have evolving graceful-shutdown APIs; TRT-LLM's drain semantics are Triton-driven. Verify against the pinned engine release's docs rather than relying on the pattern above. -->
+Both vLLM and SGLang expose equivalents — vLLM via a `--shutdown-timeout` flag that aborts in-flight requests and drains output queues on SIGTERM/SIGINT (see RFC <https://github.com/vllm-project/vllm/issues/63734> for current contract and known gaps, including the `--api-server-count > 1` bug), and SGLang via its native SIGTERM drain in the Python server (`TokenizerManager.sigterm_watchdog`) plus the Rust server's drain-on-SIGTERM path. The TRT-LLM / Triton stack inherits Triton's graceful-shutdown behaviour. Verify your engine's drain interface against the pinned release's docs; the pattern above is a fallback when the engine has no built-in support.
 
 ## KV checkpointing — when it pays, when it doesn't
 
@@ -180,9 +176,7 @@ For most fleets, **the simplest shape wins**: aggressive drain + aggressive retr
 2. The SLO is tight (no tolerance for client-visible retries).
 3. The preemption rate is high enough that you measurably lose requests to it.
 
-Chapter 104's tiered-KV-store discussion is the technical depth; this chapter's responsibility is naming whether the investment is worth it.
-
-<!-- needs-research: LMCache / Mooncake / NIXL support in vLLM / SGLang is evolving; the specific "KV survives pod restart" capability is not universal. Verify against the engine's current KV-cache features before adopting as a chapter-05 pattern. -->
+Chapter 104's tiered-KV-store discussion is the technical depth; this chapter's responsibility is naming whether the investment is worth it. (Coverage across the three remote-KV projects is uneven as of writing: LMCache — <https://github.com/LMCache/LMCache> — has an explicit vLLM integration but no documented SGLang path; Mooncake — <https://github.com/kvcache-ai/Mooncake> — documents integrations with both vLLM and SGLang; NVIDIA's NIXL — <https://github.com/ai-dynamo/nixl> — is a transfer-engine abstraction targeting the NVIDIA Dynamo stack and doesn't directly integrate with vLLM/SGLang. "KV survives pod restart" is not universal; verify engine-side support before adopting.)
 
 ## Spot pool shape and placement
 

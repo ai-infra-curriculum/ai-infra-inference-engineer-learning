@@ -25,7 +25,7 @@ By the end of this chapter you can:
 - Reason about which workload mix justifies sharing and which doesn't — HBM-starved, latency-critical, noisy-neighbour-sensitive, multi-tenant isolation.
 - Compose chapter 01's substrate with sharing — the GPU Operator's MIG manager, the device-plugin's MPS and MIG strategies, DRA's `ResourceClaim` shape.
 
-<!-- needs-research: DRA (Dynamic Resource Allocation) is moving between Kubernetes alpha / beta / GA across releases; NVIDIA's DRA driver (`k8s-dra-driver`) is also evolving. The specific API shapes and CRD versions in this chapter should be verified against the Kubernetes release the fleet runs and NVIDIA's DRA driver's release notes. -->
+DRA graduated to GA in Kubernetes 1.34 (<https://kubernetes.io/blog/2025/09/01/kubernetes-v1-34-dra-updates/>) under API group `resource.k8s.io/v1`; NVIDIA's DRA driver is at <https://github.com/NVIDIA/k8s-dra-driver-gpu> (renamed from `k8s-dra-driver`) and still evolves release-over-release. Pin both to the versions your cluster runs before copying the examples verbatim.
 
 ## The three mechanisms at a glance
 
@@ -39,9 +39,7 @@ By the end of this chapter you can:
 
 - **MIG** — generally available on A100, H100, H200, and newer datacenter GPUs. Managed by the GPU Operator's MIG manager via a `nvidia.com/mig.config` node label. Not available on consumer / older datacenter cards (V100, T4, A10, L4, L40 series — verify your SKU).
 - **MPS** — generally available since CUDA 7.5. Device plugin supports an `mps` *sharing strategy*. Not recommended as a default on multi-tenant clusters because of the lack of hard isolation.
-- **DRA** — Kubernetes-side moved from alpha to beta over recent releases and is on a GA path; NVIDIA's `k8s-dra-driver` is the official driver. Verify current status against the pinned Kubernetes release and the NVIDIA DRA driver's release notes.
-
-<!-- needs-research: DRA status in the pinned Kubernetes version. KEP-4381 (Dynamic Resource Allocation) covers the API; the NVIDIA DRA driver repo is at <https://github.com/NVIDIA/k8s-dra-driver>. The specific CRD versions (`resource.k8s.io/v1beta1` vs `v1`) and the GA timeline matter for whether the examples below are literally runnable on your cluster. -->
+- **DRA** — graduated to GA in Kubernetes 1.34 (September 2025) under the stable API group `resource.k8s.io/v1` (<https://kubernetes.io/blog/2025/09/01/kubernetes-v1-34-dra-updates/>); KEP-4381 ("DRA: structured parameters", <https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/4381-dra-structured-parameters>) covers the API. NVIDIA's `k8s-dra-driver-gpu` (<https://github.com/NVIDIA/k8s-dra-driver-gpu>, renamed from `k8s-dra-driver`) is the official driver and currently requires Kubernetes 1.32+. Pre-1.34 clusters still carry `v1beta1`; verify API version and driver release against the pinned Kubernetes version before using the examples below.
 
 ## MIG — hardware-partitioned slices
 
@@ -218,9 +216,7 @@ spec:
       - name: gpu
 ```
 
-The API shape above is **illustrative** — the exact CRD names and fields are driver-release-specific; always verify against the pinned driver's examples.
-
-<!-- needs-research: the NVIDIA DRA driver's CRD shape (ResourceClaimTemplate, GpuClaimParameters, or whatever the current release calls them) changes release-over-release. See <https://github.com/NVIDIA/k8s-dra-driver> for the current examples. -->
+The API shape above is **illustrative** — the exact CRD names and fields are driver-release-specific; always verify against the pinned driver's examples. In current `k8s-dra-driver-gpu` releases on Kubernetes 1.34+, the vendor-specific `GpuClaimParameters` CRD has been superseded by standard upstream DRA kinds (`DeviceClass`, `ResourceClaim`, `ResourceClaimTemplate`) under `resource.k8s.io/v1`, with the GPU's `DeviceClass` named `gpu.nvidia.com` — see the quickstart specs at <https://github.com/NVIDIA/k8s-dra-driver-gpu/tree/main/demo/specs/quickstart/v1> for the current shape.
 
 ### Operational trade-offs
 

@@ -23,7 +23,7 @@ By the end of this chapter you can:
 - Reason about cost-vs-latency routing — the latency tax, the price curve, the per-provider rate limits.
 - Compose with chapters 02 (per-region scalers), 04 (per-region warm pools), 05 (regional spot preemption as a routing signal).
 
-<!-- needs-research: specific external-provider feature parity (Fireworks, Together, Baseten, NVIDIA NIM, AWS Bedrock, Google Vertex) rotates fast. The LiteLLM project tracks a maintained adapter surface; always verify current provider support and quirks against the LiteLLM docs and each provider's current pricing / SLA. -->
+LiteLLM's providers list (<https://docs.litellm.ai/docs/providers>) confirms adapters for the providers named here — Fireworks AI, Together, Baseten, NVIDIA NIM, AWS Bedrock, Google Vertex AI, OpenAI, Anthropic, Groq, and many more — but per-provider feature parity (tool-calling semantics, structured output, reasoning-token channels, streaming trailers, pricing, SLA) rotates fast. Always re-verify current provider support and quirks against the LiteLLM docs and each provider's own documentation.
 
 ## The three resilience rings
 
@@ -140,7 +140,7 @@ Per region:
 
 Failover scenario: `us-east-1` ALB health check fails for 20 s. Cloudflare removes it from the pool; all client resolves route to `us-west-2`. The user's effective TTFT rises by cross-region RTT (~60–80 ms coast-to-coast) and the SLO stays within budget *because* `us-west-2` was sized for the failover case.
 
-<!-- needs-research: Cloudflare Load Balancing specifics on steering and failover behaviour. AWS Global Accelerator and Google Cloud External Load Balancer are alternatives; the specific feature matrix (SSE support, long-timeout, health-check cadence) varies by provider. Verify against current docs before adopting. -->
+Cloudflare Load Balancing documents dynamic (latency-based), geo, proximity, least-outstanding-requests, and standard steering, with configurable health checks (<https://developers.cloudflare.com/load-balancing/understand-basics/traffic-steering/steering-policies/>). AWS Global Accelerator (<https://aws.amazon.com/global-accelerator/>) and Google Cloud Load Balancing (<https://cloud.google.com/load-balancing>) are anycast-VIP alternatives. Note that long-lived SSE connections through Cloudflare bump into a ~100s idle timeout (HTTP 524) unless the server emits keepalive heartbeats — not an advertised feature of their LB. Verify the specific feature matrix (SSE support, long-timeout, health-check cadence) against the provider's current docs before adopting.
 
 ## Section 2 — Multi-provider: the LiteLLM-shape router
 
@@ -192,9 +192,7 @@ The config knobs are policy; let me unpack a few:
 - **`fallbacks`** — on failure of the primary, LiteLLM routes to the backup. Error codes that trigger fallback include 5xx, rate-limit, provider-timeout.
 - **`cooldown_time`** — after a provider errors enough, LiteLLM "cools it down" for N seconds (circuit-breaker shape). Prevents retry storms from re-hitting a broken backend.
 - **`rpm` / `tpm`** — per-provider request/token-per-minute budgets. LiteLLM load-balances across backends respecting each one's budget.
-- **`routing_strategy`** — `simple-shuffle`, `least-busy`, `usage-based-routing-v2`, `latency-based-routing` are among the options; each has trade-offs.
-
-<!-- needs-research: LiteLLM's config shape and the specific router-strategy names rotate per release. Verify against <https://docs.litellm.ai/> and the pinned release. -->
+- **`routing_strategy`** — `simple-shuffle` (default), `least-busy`, `usage-based-routing-v2`, `latency-based-routing`, and `cost-based-routing` are among the options per <https://docs.litellm.ai/docs/routing>; each has trade-offs. Cross-check the strategy names and config fields against your pinned LiteLLM release.
 
 ### Where to deploy the router
 

@@ -23,7 +23,7 @@ By the end of this chapter you can:
 - Compose the warm pool with chapter 02's HPA — `minReplicas` as the warm-pool floor, `maxReplicas` as the spike ceiling, pre-warmers held outside the HPA.
 - Deploy the right weight-locality pattern — baked-in, pre-staged on PVC, mmap from object store, in-memory shared cache — against cold-start budget.
 
-<!-- needs-research: component timings in this chapter are illustrative order-of-magnitude figures (image pull in tens of seconds, weight pull in minutes, etc.). Specific numbers depend on image size, storage tier, network bandwidth, GPU model, and engine; always measure on your fleet before using a specific figure in a policy. -->
+Component timings quoted in this chapter are illustrative order-of-magnitude figures. Actual numbers depend on image size, storage tier, network bandwidth, GPU model, and engine; always measure on your own fleet before using any specific figure in a policy.
 
 ## The five components of cold-start
 
@@ -153,7 +153,7 @@ Knative Serving is a **poor fit** for inference when:
 - Traffic has frequent bursts where consecutive bursts cannot afford a cold-start each.
 - The SLO tolerates no cold-start latency.
 
-<!-- needs-research: Knative's inference ergonomics have improved over releases, and the KServe project (built on Knative) adds model-serving-specific knobs (model caching, agent-pre-pull, etc.). Verify the current KServe status against <https://kserve.github.io/> before choosing between "plain Knative" and "KServe." -->
+The KServe project (built on Knative) adds model-serving-specific knobs that materially shift this fit rule — in particular its **Local Model Cache** feature (<https://kserve.github.io/website/docs/model-serving/generative-inference/modelcache/localmodel>) pre-stages model artifacts to node-local storage and cuts large-model cold-start from the tens of minutes down to roughly a minute. Verify the current KServe release and feature set at <https://kserve.github.io/website/> before choosing between "plain Knative" and "KServe."
 
 ### KServe as the inference-shaped wrapper
 
@@ -319,9 +319,7 @@ spec:
   ports: [{port: 80, targetPort: 8000}]
 ```
 
-Both Deployments' pods carry `app=vllm-llama31-70b` so the Service load-balances across them. The warm pool absorbs baseline + small bursts; the reactive pool handles spikes.
-
-<!-- needs-research: some fleets prefer a single Deployment with a separate "always-on" annotation for the warm replicas (so the HPA can scale around them). The two-Deployment pattern is simpler and more explicit but duplicates templating; verify which shape your platform tooling (Argo Rollouts, Flagger, etc.) composes with before adopting. -->
+Both Deployments' pods carry `app=vllm-llama31-70b` so the Service load-balances across them. The warm pool absorbs baseline + small bursts; the reactive pool handles spikes. (Some fleets prefer a single Deployment with the warm replicas pinned via `minReplicas` and the HPA scaling around them; the two-Deployment pattern is simpler and more explicit but duplicates templating. Check which shape your rollout tooling — Argo Rollouts, Flagger, etc. — composes with before picking.)
 
 ## The scale-to-zero policy for small models
 

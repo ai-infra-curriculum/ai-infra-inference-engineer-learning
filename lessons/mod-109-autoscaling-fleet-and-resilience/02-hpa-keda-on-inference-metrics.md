@@ -33,7 +33,7 @@ By the end of it you can:
 - Reason about multi-metric HPAs — queue depth as the primary, TTFT P99 as the safety net, GPU utilisation only as a *floor* for scale-down.
 - Build the alert set that catches a mis-tuned scaler before it causes an SLO breach.
 
-<!-- needs-research: engine metric names (vllm_num_requests_waiting, sglang_queue_depth, etc.) differ per engine and per release. Verify current metric names against the engine's docs for the pinned release. Chapter 03 of module 103 enumerates the full scheduler-metric set this chapter leans on. -->
+Engine metric names differ per engine and have rotated between releases — the specific series below are confirmed against vLLM's and SGLang's current production-metrics docs, but always cross-check against the engine release your fleet pins. Chapter 03 of module 103 enumerates the full scheduler-metric set this chapter leans on.
 
 ## Why CPU and GPU utilisation are wrong signals
 
@@ -63,7 +63,7 @@ Memory is a *budget* for how many concurrent requests fit (KV cache; chapter 104
 
 ### Signal 1 — queue depth (requests waiting to be admitted)
 
-The scheduler holds a queue of requests that arrived but haven't started yet. The queue length is the direct expression of "demand exceeds supply." vLLM exposes it as `vllm:num_requests_waiting`; SGLang as `sglang_num_waiting_requests` (or similar — verify per release); TRT-LLM via the Triton metrics for the pending-request queue.
+The scheduler holds a queue of requests that arrived but haven't started yet. The queue length is the direct expression of "demand exceeds supply." vLLM exposes it as `vllm:num_requests_waiting` (<https://docs.vllm.ai/en/stable/usage/metrics/>); SGLang as `sglang:num_queue_reqs` (<https://docs.sglang.io/references/production_metrics.html>, requires `--enable-metrics`); TRT-LLM via the Triton metrics for the pending-request queue.
 
 - Rising queue depth → the current replicas can't absorb arrivals → scale up.
 - Falling queue depth → there's slack → maybe scale down (with hysteresis).
@@ -75,9 +75,7 @@ Queue depth is *the* primary signal.
 
 The count of requests currently being decoded on the replica. For a replica with `max-num-seqs=64`, in-flight approaching 64 is "the batch is full and new arrivals will queue." Combined with queue depth, in-flight is the *rate* side of the demand picture (queue depth is the *backlog*).
 
-Fleet-level target: in-flight / max-num-seqs ≈ 0.7–0.8 at steady state. Below 0.5, the fleet is over-provisioned. Above 0.9, queueing is imminent and TTFT will tail.
-
-<!-- needs-research: the specific "0.7–0.8" range is a reasonable operator rule but depends on the batch shape, prefill-vs-decode mix, and SLO. The right threshold is derived empirically per deployment. -->
+Fleet-level target: in-flight / max-num-seqs in the rough neighbourhood of 0.7–0.8 at steady state as a starting point, but the right threshold is deployment-specific — it moves with the batch shape, prefill-vs-decode mix, and the SLO, and should be derived empirically. Well below that range the fleet is over-provisioned; much above it, queueing is imminent and TTFT will tail.
 
 ### Signal 3 — prefill-tokens-per-second (prefill-TPS)
 
@@ -206,7 +204,7 @@ KEDA's two advantages for inference:
 - **Scale-from-zero** — the HPA's `minReplicas: 0` isn't supported; KEDA makes it work. Chapter 04 depends on it.
 - **One place to describe multiple triggers** — queue depth as primary and TTFT P99 as safety net is a two-trigger `ScaledObject`. The HPA path works but is uglier.
 
-<!-- needs-research: KEDA Prometheus scaler query shape and the specific `scaleTargetRef`/`behavior` passthrough fields rotate between releases. Verify against the pinned KEDA release's docs. -->
+The Prometheus scaler fields used above (`serverAddress`, `query`, `threshold`) and the `advanced.horizontalPodAutoscalerConfig.behavior` passthrough shape match the current KEDA docs (<https://keda.sh/docs/latest/scalers/prometheus/>, <https://keda.sh/docs/latest/reference/scaledobject-spec/>); cross-check against the pinned KEDA release before adopting verbatim.
 
 ## Scale-up vs. scale-down hysteresis
 

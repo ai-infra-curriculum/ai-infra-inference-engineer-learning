@@ -22,7 +22,7 @@ Every one of those failures is prevented by the GPU-aware substrate this chapter
 - Author a Karpenter `NodePool` (or Cluster Autoscaler node group) that bin-packs the right GPU SKU for a stated replica shape — and respects the atomic shape of a TP group.
 - Run the four substrate health checks that confirm all of the above is wired right *before* an inference pod is scheduled against it.
 
-<!-- needs-research: component version compatibility matrices (GPU Operator → driver → CUDA → container toolkit → node OS) rotate every quarter. The specific releases named below are illustrative — always pin and verify against the GPU Operator release notes and the pinned Kubernetes version for your cluster. -->
+Version compatibility across the stack (GPU Operator → driver → CUDA → container toolkit → node OS) rotates between releases; always pin and verify against the current GPU Operator platform-support matrix (<https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/platform-support.html>) for the Kubernetes version your cluster runs.
 
 ## The substrate layers
 
@@ -83,9 +83,7 @@ kubectl -n gpu-operator get pods
 #  - gpu-feature-discovery-xxxxx              (one per GPU node)
 ```
 
-Any CrashLoopBackOff here will mask every downstream failure. Fix at this layer first.
-
-<!-- needs-research: the exact component list and DaemonSet names evolve per Operator release. Verify against the Operator's "component matrix" page in the current release notes. -->
+Any CrashLoopBackOff here will mask every downstream failure. Fix at this layer first. (Recent Operator releases add more components — Node Feature Discovery, `nvidia-operator-validator`, a separate `nvidia-dcgm` DaemonSet alongside the exporter, and optional operands like the DRA driver, KubeVirt GPU plugin, GDS/GDRCopy drivers; cross-check the install's component list against the Operator's getting-started docs for the pinned release.)
 
 ## Advertising `nvidia.com/gpu`
 
@@ -140,9 +138,7 @@ metadata:
 handler: nvidia
 ```
 
-Any pod that wants a GPU should set `runtimeClassName: nvidia`. On many clusters the default runtime is already `nvidia-container-runtime` (one less footgun), but setting the class explicitly is the robust path and the one that survives a cluster upgrade.
-
-<!-- needs-research: whether the default runtime should be `nvidia` cluster-wide or opt-in via `runtimeClassName` is a judgement call. The Operator's documentation discusses the trade-off. Verify current recommended default against the pinned release's notes. -->
+Any pod that wants a GPU should set `runtimeClassName: nvidia`. GPU Operator installs set `nvidia-container-runtime` as the containerd default runtime by default (`CONTAINERD_SET_AS_DEFAULT=true`; see <https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/install-gpu-operator.html>), so GPU pods typically work without an explicit class; setting the class explicitly is the robust path and the one that survives a cluster upgrade or a changed install flag.
 
 ## Taints and tolerations — keeping CPU pods off GPU nodes
 
@@ -240,9 +236,7 @@ Two inference-specific choices to notice:
 - `consolidateAfter: 60m` — the default is often shorter. GPU boot is slow (chapter 04); consolidating too aggressively creates thrash.
 - Separate `NodePool` per SKU is often cleaner than one pool with many SKUs — different SLAs, different pricing, different drain policies (chapter 05 for spot).
 
-Verify the current Karpenter CRD version — `v1` is current at time of writing but the API has evolved from `v1alpha` to `v1beta1` to `v1`. The pattern is stable; the field names rotate.
-
-<!-- needs-research: Karpenter CRD version and field names rotate (`v1alpha5` → `v1beta1` → `v1`). The example above uses the current `v1` shape; verify against <https://karpenter.sh/docs/concepts/nodepools/> for the exact fields and defaults in the pinned release. -->
+Verify the current Karpenter CRD version — `karpenter.sh/v1` is the stable API as of the current docs at <https://karpenter.sh/docs/concepts/nodepools/>, after the API evolved through `v1alpha5` and `v1beta1`. The pattern is stable; the field names have rotated between major versions.
 
 ### Cluster Autoscaler — the broadly supported path
 
@@ -259,10 +253,8 @@ A single pod with `nvidia.com/gpu: 4` is a single scheduling unit; Kubernetes wi
 For TP > 8 (two nodes) or for pipeline parallelism across multiple nodes, you have a *group of pods* that must land together on specific topology. Three mechanisms:
 
 - **Kubernetes native: pod anti-affinity + topology spread constraints.** Works for small cases; brittle at scale.
-- **JobSet / LeaderWorkerSet.** The current recommended pattern for multi-pod inference replicas. LeaderWorkerSet (`sigs.k8s.io/lws`) is designed for exactly this — a leader + N workers that scale and are rescheduled as a unit. The Kubernetes AI serving community has standardised on it; verify current status and version.
+- **JobSet / LeaderWorkerSet.** The current recommended pattern for multi-pod inference replicas. LeaderWorkerSet (<https://github.com/kubernetes-sigs/lws>, API group `leaderworkerset.x-k8s.io/v1`) is designed for exactly this — a leader + N workers that scale and are rescheduled as a unit. The Kubernetes AI serving community has standardised on it for multi-host sharded LLM inference.
 - **Volcano / Kueue / Gang scheduling.** Batch-scheduler-level gang scheduling for groups that must schedule atomically or not at all. Overkill for TP=4 on one node; justified for TP=16 across two nodes with the model loaded in halves.
-
-<!-- needs-research: LeaderWorkerSet is relatively new; the exact repo, release, and K8s API group have been evolving. Verify the current reference at <https://github.com/kubernetes-sigs/lws> and the inference-specific adoption at the K8s AI serving working group. -->
 
 Chapter 107 of this track and chapter 02 of `mod-107-distributed-inference-topologies` cover the TP / PP layout; this chapter's responsibility is naming the mechanism for landing the group on the cluster.
 
