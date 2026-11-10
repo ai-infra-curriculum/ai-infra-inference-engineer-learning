@@ -12,7 +12,7 @@ Three operator consequences of the compile-ahead design:
 2. **Max per-GPU throughput on NVIDIA hardware** is historically where TRT-LLM has been strongest. The compile step can bake in fused kernels, numeric-format choices (FP8 / FP4), and parallelism topology into one artifact.
 3. **The hardware target is pinned.** An engine built for H200 is not interchangeable with one built for B200. The fleet-rotation plan has to include engine rebuilds — this is the operator overhead you pay for the throughput ceiling.
 
-Everything below is a planning assumption; TRT-LLM release notes, the Triton docs, and the Dynamo repo are authoritative. <!-- needs-research: TRT-LLM build-command names, backend config names, and Triton-side parameters evolve release-to-release; the semantics below are stable, the exact flag spellings may not be. Verify against the TRT-LLM / Triton / Dynamo versions your fleet runs. -->
+Everything below is a planning assumption; TRT-LLM release notes, the Triton docs, and the Dynamo repo are authoritative. Build-command names, backend config names, and Triton-side parameters evolve release-to-release — the semantics below are stable, the exact flag spellings may not be. Verify against the TRT-LLM / Triton / Dynamo versions your fleet runs.
 
 ## The build pipeline — convert → quantize → build → serve
 
@@ -131,7 +131,7 @@ Within the backend's `config.pbtxt`, the parameters that gate operational behavi
 - `decoding_mode` / speculative-decoding parameters — if the engine was built with speculative decoding support, this is where runtime speculative decoding is enabled.
 - `lora_cache_optimal_adapter_size` and friends — multi-LoRA runtime settings when the engine supports it.
 
-Every name above has rotated at least once across TRT-LLM backend releases; <!-- needs-research: cross-check the exact `config.pbtxt` field names against the version of `tensorrtllm_backend` you are deploying. --> treat them as the shape of the surface, not the final spelling.
+Every name above has rotated at least once across TRT-LLM backend releases; cross-check the exact `config.pbtxt` field names against the version of `tensorrtllm_backend` you are deploying, and treat them as the shape of the surface, not the final spelling.
 
 ### Triton-level operational knobs
 

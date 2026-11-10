@@ -6,7 +6,7 @@
 
 Hugging Face **Text Generation Inference (TGI)** was, for several years, one of the four major open-source LLM serving engines alongside vLLM, SGLang, and TensorRT-LLM. A lot of production fleets, a lot of blog posts, a lot of runbooks, a lot of your peer-track colleagues' muscle memory were built against TGI.
 
-Hugging Face has since signalled that TGI's maintenance posture has changed and that recommended serving for new deployments points elsewhere. The sibling `ai-infra-performance` curriculum notes a 2026 archival signal. <!-- needs-research: lock the exact current maintenance status of TGI, the archival date, the recommended-serving guidance from Hugging Face, and the state of community forks before each content refresh. The CURRICULUM.md references a 2026 archival signal from the performance-engineer cycle; verify the exact date and official statement against Hugging Face's blog / repo README. -->
+Hugging Face has since signalled that TGI's maintenance posture has changed and that recommended serving for new deployments points elsewhere. The `huggingface/text-generation-inference` GitHub repository was archived on 2026-03-21 and placed in maintenance mode; its README now points new deployments to vLLM, SGLang, and (for local / on-device use) llama.cpp or MLX. See <https://github.com/huggingface/text-generation-inference> for the authoritative statement.
 
 This chapter does three things:
 
@@ -22,7 +22,7 @@ Hugging Face has moved its primary serving story toward:
 
 - **Hugging Face Inference Endpoints** — their managed, cloud-hosted serving product. This is where "the HF way to serve a model" now points for most teams.
 - **vLLM** and **TRT-LLM** as the recommended self-hosted serving engines when Inference Endpoints doesn't fit.
-- **TGI** itself in a maintenance-only / archived posture. <!-- needs-research: confirm whether TGI is actively archived, in maintenance mode, or still receiving security-only patches. The exact classification determines the operator posture (frozen version pin vs. ongoing minor-version tracking). -->
+- **TGI** itself in a maintenance-only / archived posture — the GitHub repository was archived on 2026-03-21 and its README states the project will accept only "pull requests for minor bug fixes, documentation improvements and lightweight maintenance tasks" going forward.
 
 What this means operationally for an existing fleet:
 
@@ -39,13 +39,13 @@ Placing TGI against the ten axes from module 101 chapter 02:
 | Scheduling model | Continuous batching |
 | KV-cache primitive | Paged KV cache (TGI-specific implementation) |
 | Attention / kernels | Flash Attention; TGI's own fused kernels |
-| Quantization matrix | BF16/FP16; INT8, INT4, AWQ, GPTQ, EETQ depending on version; FP8 on recent releases <!-- needs-research --> |
+| Quantization matrix | BF16/FP16; INT8, INT4, AWQ, GPTQ, EETQ depending on version; FP8 on later releases |
 | Parallelism | TP; PP via `shards`; limited EP support |
 | Disaggregated P/D | Not a first-class feature |
 | Multi-adapter | LoRA via adapters; multi-LoRA with varying maturity across versions |
-| Speculative decoding | Draft-target, Medusa — version-dependent <!-- needs-research --> |
+| Speculative decoding | Draft-target, Medusa — version-dependent |
 | API surface | HF Messages API, OpenAI-compatible endpoint, native TGI HTTP + gRPC |
-| Hardware backends | NVIDIA primary; AMD / Gaudi / Neuron paths at varying maturity <!-- needs-research --> |
+| Hardware backends | NVIDIA primary; AMD / Gaudi / Neuron paths at varying maturity |
 
 The *shape* of TGI matches vLLM's much more than TRT-LLM's — Python-defined serving with runtime continuous batching, no compile step, OpenAI-compatible endpoints. The key operational differences in the TGI era:
 
@@ -57,7 +57,7 @@ The *shape* of TGI matches vLLM's much more than TRT-LLM's — Python-defined se
 
 ### Hugging Face Inference Endpoints — the managed path
 
-A managed, cloud-hosted serving product from Hugging Face. Teams point it at a model on the HF Hub and get an endpoint. The underlying engine is HF-managed and has shifted over time (TGI historically; now a mix with vLLM and other backends — <!-- needs-research: lock the current engine-mix behind Inference Endpoints against the HF docs -->).
+A managed, cloud-hosted serving product from Hugging Face. Teams point it at a model on the HF Hub and get an endpoint. The underlying engine is HF-managed and has shifted over time (TGI historically; now a mix in which vLLM is the default engine for new endpoints with SGLang and the archived-but-still-selectable TGI available as alternates — verify the current engine list against the Inference Endpoints docs for your account).
 
 - **Capability map placement** — the full axes above don't fully apply because the engine is managed; you consume *endpoints*, not *engine knobs*. Available knobs are high-level: instance type, autoscaling bounds, model and revision.
 - **Build-vs-buy fit** — Inference Endpoints wins when: the team wants fast time-to-endpoint, the HF Hub model catalogue is the source of truth, and operational depth on serving engines is not a differentiator. Loses when: cost-per-token at scale matters, custom engine knobs matter, data-boundary / enclave requirements rule out managed services.
@@ -81,7 +81,7 @@ Several other open-source projects — various forks of TGI, serving wrappers ov
 
 - **Edge / local inference** (llama.cpp wrappers, Ollama) — the module 101 chapter 02 placement for llama.cpp applies.
 - **Framework-glue projects** (various Transformers-based `generate()` servers) — not production inference engines; they'll show up in demos.
-- **Community TGI forks** — if a specific fork is picked up by a vendor or community, it gets its own compare-point. <!-- needs-research: track whether a maintained community TGI fork emerges post-archival and update this chapter if so. -->
+- **Community TGI forks** — several vendor- or community-maintained forks exist (for example DeepInfra's, Preemo's, and H2O's `open-text-generation-inference`); if one becomes the de facto successor for a given fleet, treat it as its own compare-point rather than as a continuation of upstream TGI's support story.
 
 The main compare-points you must know are Inference Endpoints (managed path) and Text-Generation-WebUI (community UI). Everything else slots into "edge / local" or "framework glue" and is covered where appropriate.
 

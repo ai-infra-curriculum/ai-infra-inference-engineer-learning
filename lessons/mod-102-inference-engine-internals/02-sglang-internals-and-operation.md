@@ -11,7 +11,7 @@ Two workloads make SGLang the right default over vLLM:
 
 Everything else — scheduler loop, KV allocator shape, request lifecycle — rhymes with the five-layer map from chapter 01. We walk the same five layers for SGLang, then focus on the three places it is meaningfully different: RadixAttention, the zero-overhead batch scheduler, and cache-aware routing.
 
-As with chapter 01, every specific flag or module-name claim below is a planning assumption. <!-- needs-research: SGLang's internal module names, class names, launch-flag names, and defaults rotate between releases. Before putting any of this in a production runbook, verify against the SGLang version your fleet runs — see resources.md. -->
+As with chapter 01, every specific flag or module-name claim below is a planning assumption. Internal module names, class names, launch-flag names, and defaults rotate between SGLang releases — before putting any of this in a production runbook, verify against the version your fleet runs (see resources.md).
 
 ## The five-layer anatomy, SGLang edition
 
@@ -192,7 +192,7 @@ Reading each line against the five layers:
 - `--schedule-policy lpm` → layer 3 scheduler policy (longest-prefix-match-aware; verify current policy names). This is the SGLang-distinct knob — the scheduler itself favours cache-hitting requests.
 - `--enable-torch-compile` → layer 5 compile-time optimisation.
 
-All names and defaults rotate release-to-release. <!-- needs-research: verify every flag name, default, and schedule-policy value above against the SGLang release matching your fleet. The semantics are stable; the surface is not. -->
+All names and defaults rotate release-to-release. Verify every flag name, default, and schedule-policy value above against the SGLang release matching your fleet; the semantics are stable, the surface is not.
 
 ## When SGLang wins over vLLM, and when it doesn't
 

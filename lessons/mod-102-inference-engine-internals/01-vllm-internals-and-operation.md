@@ -11,7 +11,7 @@ To operate it under SLO you need two things this chapter delivers:
 1. A **mental map of the source** at the exact resolution a production outage requires — low enough to point at a scheduler bug, high enough that you don't drown in individual kernel calls.
 2. A **working knowledge of the engine-args surface** — the knobs that gate throughput, latency, and memory, and the knobs that are footguns if misread.
 
-Everything below is a planning assumption; the vLLM source and release notes are the authoritative references (`resources.md`). <!-- needs-research: vLLM internal module names, class names, and flag defaults rotate between releases. Before quoting the exact names in a runbook, verify against the vLLM version your fleet runs. -->
+Everything below is a planning assumption; the vLLM source and release notes are the authoritative references (`resources.md`). Internal module names, class names, and flag defaults rotate between releases — before quoting the exact names in a runbook, verify against the vLLM version your fleet runs.
 
 ## The five-layer anatomy
 
@@ -112,7 +112,7 @@ If you can walk this lifecycle in a code tour (scheduler → block manager → r
 
 ## The engine-args surface
 
-Below is the operator-level cheatsheet. **Every value is a planning assumption; verify against `vllm serve --help` for your version.** <!-- needs-research: default values and flag names shift between vLLM releases. The semantics below are stable; the defaults are not. -->
+Below is the operator-level cheatsheet. **Every value is a planning assumption; verify against `vllm serve --help` for your version.** Default values and flag names shift between releases; the semantics below are stable, the defaults are not.
 
 ### Model, tokenizer, parallelism
 

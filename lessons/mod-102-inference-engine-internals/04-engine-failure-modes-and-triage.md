@@ -14,7 +14,7 @@ The seven failure modes below are the ones you will meet repeatedly. For each on
 - **The fix** — the knob, patch, or rollback.
 - **The prevention** — what to add to the pre-release checklist so this one stops being a surprise.
 
-All seven assume you have the vocabulary and knob-set from chapters 01–03 at hand. The symptoms are engine-agnostic; the knob names map to vLLM where quoted, with the SGLang / TRT-LLM equivalents in the chapters above. <!-- needs-research: specific metric names, flag spellings, and release defaults rotate between engine versions. Treat the examples in this chapter as the *shape* of the triage; verify current metric names and flag spellings against the engine release your fleet runs. -->
+All seven assume you have the vocabulary and knob-set from chapters 01–03 at hand. The symptoms are engine-agnostic; the knob names map to vLLM where quoted, with the SGLang / TRT-LLM equivalents in the chapters above. Specific metric names, flag spellings, and release defaults rotate between engine versions — treat the examples in this chapter as the *shape* of the triage, and verify current metric names and flag spellings against the engine release your fleet runs.
 
 ## 1. OOM on long-context
 

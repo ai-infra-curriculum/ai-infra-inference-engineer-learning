@@ -59,7 +59,7 @@ Many flag names, metric names, and defaults in the chapters are tagged with `<!-
 - TGI documentation — <https://huggingface.co/docs/text-generation-inference/>
 - Hugging Face Inference Endpoints — <https://huggingface.co/docs/inference-endpoints/>
 - Text-Generation-WebUI — <https://github.com/oobabooga/text-generation-webui>
-- <!-- needs-research: lock the current maintenance status of TGI (archived / maintenance-only / community-forked), the authoritative Hugging Face announcement, and the current recommended-serving guidance for new deployments. Chapter 05 and exercise 05 both reference this; CURRICULUM.md references a 2026 archival signal from the sibling performance-engineer cycle. -->
+- The `huggingface/text-generation-inference` GitHub repository was archived on 2026-03-21 and is in maintenance mode (minor bug fixes, documentation, and lightweight maintenance only, per the repo README). Hugging Face's README now points new deployments to vLLM, SGLang, and — for local / on-device use — llama.cpp or MLX. Verify the exact posture against <https://github.com/huggingface/text-generation-inference> on each content refresh.
 
 ## Scheduling, batching, and KV-cache primitives (research references)
 
