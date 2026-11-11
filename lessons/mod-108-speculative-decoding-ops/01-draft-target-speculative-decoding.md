@@ -16,7 +16,7 @@ This chapter walks each decision. By the end of it you can:
 - Deploy a draft-target pair on vLLM, SGLang, and (where applicable) TensorRT-LLM — the launch flags, the KV-cache impact, the sampling-parameter restrictions, and the health check that confirms speculative is actually firing (not silently falling back to per-token decode).
 - State the TTFT-vs-throughput trade-off and the two load regimes where speculative pays vs. hurts (chapter 05 completes the "hurts" side).
 
-<!-- needs-research: engine-specific flag names and spec-decoding ergonomics rotate between releases. Each example below should be verified against the pinned vLLM / SGLang / TensorRT-LLM release the fleet runs. The release-notes URLs in resources.md are the sources of truth. -->
+The engine-specific flag names and command-line ergonomics below rotate between releases; the deployment section at the end of this chapter cites the current primary-source guides for vLLM, SGLang, and TensorRT-LLM.
 
 ## The draft-and-verify loop
 
@@ -77,7 +77,7 @@ For stochastic sampling, speculative decoding uses **rejection sampling** to pre
 
 This is Leviathan et al.'s result: *the output distribution is identical to vanilla sampling from the target.* Speculative decoding does not change what the model generates in expectation — it only changes how many target-forward-passes it costs.
 
-<!-- needs-research: vLLM / SGLang / TRT-LLM each implement speculative sampling with slightly different sampler semantics (temperature, top-p, top-k interaction). Verify the engine's documented sampler-compatibility matrix against the pinned release — some engines restrict speculative to greedy / top-k only, or disable it when `logprobs` is requested. -->
+Engines vary in exactly which sampling-parameter combinations are supported when speculative is enabled — vLLM's speculative-decoding documentation, for example, notes that pipeline parallelism, beam search, and some `logprobs`-related configurations are incompatible with speculative in current releases (see <https://docs.vllm.ai/en/latest/features/speculative_decoding/>). Verify the engine's documented sampler-compatibility matrix against the pinned release before deployment.
 
 ### Tree-based verification (variants to be aware of)
 
@@ -125,7 +125,7 @@ The closer the drafter's output distribution is to the target's, the higher the 
 - **Smaller same-family instruct checkpoint.** The 1B / 3B / 8B variants of Llama-3.x are instruction-tuned on data the 70B / 405B saw. They are not identical distributions, but they are close. Expected acceptance on a well-matched workload is roughly `α ∈ [0.6, 0.85]`.
 - **Distilled draft (trained specifically to match the target).** A draft trained by distillation from the target — same architecture family, trained with a KL-divergence or feature-matching loss against the target's outputs — reaches higher `α`. This is the fine-tuning peer's deliverable (chapter 04); the operator consumes it.
 
-<!-- needs-research: specific reported acceptance rates for popular target-draft pairs rotate as checkpoints are released and refined. The vLLM, SGLang, and TensorRT-LLM speculative-decoding guides and the EAGLE / Medusa paper repositories track representative numbers. Treat any specific α cited here as illustrative and verify on your workload. -->
+Specific reported acceptance rates for popular target-draft pairs rotate as checkpoints are released and refined; treat any `α` cited here as illustrative and measure on your workload.
 
 ### Soft: parameter ratio (determines `c_d / c_t`)
 
@@ -185,7 +185,7 @@ Operator rule: **pick `k` from `α`**, not from a default. Run the acceptance me
 
 Many engines expose a dynamic / adaptive `k` that adjusts per-sequence based on recent acceptance history. If available, prefer it over a fixed `k` — the per-sequence acceptance variance is often large.
 
-<!-- needs-research: engine-specific adaptive-k algorithms and flag names rotate. vLLM's `num_speculative_tokens` is typically fixed; SGLang / TRT-LLM may expose dynamic variants. Verify against the pinned-release docs. -->
+vLLM ships a "Dynamic Speculative Decoding" feature that can vary `num_speculative_tokens` by batch size (see <https://docs.vllm.ai/en/latest/features/speculative_decoding/dynamic_speculative_decoding/>) and SGLang documents an "Adaptive Speculative Decoding" flow; the specific flag names and algorithms differ between engines and rotate between releases, so verify against the pinned-release docs.
 
 ## The throughput-vs-TTFT trade-off
 
@@ -240,7 +240,7 @@ Engine-side things to confirm:
 - The engine exposes speculative metrics (chapter 03 enumerates). If the metrics endpoint doesn't show `*spec*` series, speculative didn't actually turn on.
 - Sampler compatibility — some flag combinations (specific `logprobs`, specific `top_p` + `temperature` combinations) may fall back to non-speculative silently. The engine's documentation should state the restrictions.
 
-<!-- needs-research: the specific flag spellings for vLLM speculative decoding (--speculative-model, --num-speculative-tokens, and any tree-attention / dynamic-k flags) rotate between releases. The 0.6.x and 0.7.x series have evolved the API; always verify against the pinned release docs. -->
+The vLLM speculative-decoding API has evolved across releases — recent versions consolidate the settings behind a single `--speculative-config` JSON object (e.g. `--speculative-config '{"method": "draft_model", "model": "...", "num_speculative_tokens": 4}'`) rather than the separate `--speculative-model` / `--num-speculative-tokens` flags shown above. Always verify against the pinned-release docs at <https://docs.vllm.ai/en/latest/features/speculative_decoding/>.
 
 ### SGLang
 
@@ -262,7 +262,7 @@ Verify the current flag set against the SGLang docs. The EAGLE variant (and its 
 
 TRT-LLM supports speculative via the engine-build pipeline. The target and draft are converted and built together (or separately, depending on the version). Verify the current pattern in the TRT-LLM examples directory and the Triton `tensorrtllm_backend` configuration.
 
-<!-- needs-research: TRT-LLM speculative decoding is build-time rather than serve-time in the API shape used by most of the examples. The specific `trtllm-build` incantation and the Triton `instance_group` / `kv_cache_type` settings should be lifted from the TRT-LLM `examples/` directory for the exact release the fleet runs. -->
+TRT-LLM selects the speculative mode at engine-build time — the `trtllm-build` command accepts `--speculative_decoding_mode` with values including `draft_tokens_external`, `lookahead_decoding`, `medusa`, `explicit_draft_tokens`, and `eagle` (see <https://nvidia.github.io/TensorRT-LLM/latest/features/speculative-decoding.html>). The exact `trtllm-build` incantation and the Triton `instance_group` / `kv_cache_type` settings should be lifted from the TRT-LLM `examples/` directory for the release the fleet runs.
 
 ### Health checks that confirm speculative is firing
 

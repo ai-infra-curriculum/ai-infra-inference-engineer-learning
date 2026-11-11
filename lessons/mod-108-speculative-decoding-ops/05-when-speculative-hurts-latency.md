@@ -21,7 +21,7 @@ By the end of this chapter you can:
 - Write the fleet's "disable speculative when ..." policy — the predicates that select which requests get speculative and which don't.
 - Decide between the three remedies: lower `k`, disable for the class, autoscale differently.
 
-<!-- needs-research: engine-side support for "disable speculative for this request" varies. Some engines accept a per-request flag; others only accept a per-fleet config. Verify the engine's documented request-level override surface before building the policy. -->
+Engine-side support for a per-request "disable speculative" override varies — some engines accept a per-request flag, others only accept a per-fleet config. Verify the engine's documented request-level override surface before building the policy.
 
 ## Regime 1 — Acceptance too low
 
@@ -93,7 +93,7 @@ Numerically (illustrative — verify on your hardware):
 - Llama-3.1-70B on 4× H100 SXM, decode-only: `B* ≈ 8–16` depending on sequence length and quantisation. Below `B*`, speculative helps. Above `B*`, the speculative speedup shrinks and can go negative above `B ≈ 48–64`.
 - The exact `B*` depends on GPU HBM bandwidth / FLOPs ratio, quantisation, kernel efficiency, and sequence length. Hopper vs. Blackwell vs. MI300 differ. Measure.
 
-<!-- needs-research: the specific B* threshold for popular (target, hardware, quantisation) combinations is published for some by the engine or hardware vendor but not all. Measure on your fleet; chapter 05's benchmark exercise walks the measurement. -->
+The specific `B*` threshold for a given (target, hardware, quantisation) combination is sometimes published by the engine or hardware vendor and sometimes not; measure on your fleet — the benchmark exercise later in this chapter walks the measurement.
 
 ### How it shows up
 

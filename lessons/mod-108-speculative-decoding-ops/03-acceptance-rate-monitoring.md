@@ -19,7 +19,7 @@ By the end of it you can:
 - Write the alert set: `α` drift, draft bypass rate, per-tenant SLO breach, and the "did a release regress acceptance" post-deploy check.
 - Distinguish an alert that means "draft-model lifecycle action" (chapter 04) from one that means "engine regression" (route to engine docs / performance peer) from one that means "workload changed" (route to the tenant).
 
-<!-- needs-research: specific metric names and label-set discipline rotate between engine versions. vLLM, SGLang, and TRT-LLM each publish a metrics reference; verify names (e.g. `vllm:spec_decode_draft_acceptance_rate` or similar) against the pinned release. -->
+Specific metric names and label-set discipline rotate between engine versions — vLLM, for example, exposes `vllm:spec_decode_draft_acceptance_rate` alongside counters like `vllm:spec_decode_num_accepted_tokens` and `vllm:spec_decode_num_draft_tokens` (see <https://docs.vllm.ai/en/latest/features/speculative_decoding/acceptance_metrics/>). SGLang and TRT-LLM each publish their own metrics references; verify names against the pinned release.
 
 ## The metric set
 
@@ -59,7 +59,7 @@ spec_draft_overhead_ratio = sum(rate(spec_draft_latency_seconds_sum[5m]))
 
 Treat these as the fleet's **first-class speculative signals**; chart them in Grafana; alert on them in Prometheus.
 
-<!-- needs-research: not all engines expose every metric above. vLLM's `metrics.py` enumerates its speculative counters; SGLang's metrics server and TRT-LLM's Triton-level metrics each have their own. For any metric the engine does not expose, synthesise from request-level traces or add a middleware shim that records it from engine callbacks. -->
+Not all engines expose every metric listed above — the enumerations live in each engine's metrics reference (vLLM's speculative-decoding counters, SGLang's metrics server, TRT-LLM's Triton-level metrics). For any metric the engine does not expose, synthesise from request-level traces or add a middleware shim that records it from engine callbacks.
 
 ### What the engine typically does NOT expose (synthesise from traces)
 

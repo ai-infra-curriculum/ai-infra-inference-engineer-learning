@@ -18,7 +18,7 @@ By the end of this chapter you can:
 - Deploy the one your engine supports and your workload warrants.
 - Reason about when each one beats draft-target and when it does not.
 
-<!-- needs-research: engine support for self-speculative schemes rotates. Medusa and EAGLE adoption spans vLLM, SGLang, TensorRT-LLM, and NVIDIA's TensorRT-LLM Model Optimizer; the exact matrix of (scheme × engine × target architecture) is release-specific. Verify the current support matrix against the pinned release of the engine your fleet runs. -->
+Engine support for self-speculative schemes rotates — vLLM's speculative-decoding guide, SGLang's `--speculative-algorithm` reference, and TensorRT-LLM's `trtllm-build --speculative_decoding_mode` values together name the current (scheme × engine × target architecture) matrix; verify against the pinned release of the engine your fleet runs.
 
 ## Medusa — multi-head prediction
 
@@ -58,7 +58,7 @@ vllm serve some-org/Llama-70B-Medusa-Instruct \
 
 The specific flag spelling evolves; verify against the vLLM speculative-decoding guide. The engine's startup log should name "Medusa" or the equivalent. The metrics in chapter 03 apply identically — Medusa-shaped acceptance rate is still `α = accepted_tokens / proposed_tokens`.
 
-<!-- needs-research: Medusa + Llama-70B checkpoints are available from several labs; the authoritative current catalogue is on Hugging Face. Verify a specific checkpoint, its training recipe, and the engine's documented support before adopting. -->
+Medusa-equipped checkpoints for popular targets are published on Hugging Face by several labs; verify a specific checkpoint, its training recipe, and the engine's documented support before adopting.
 
 ## EAGLE — feature-level drafting
 
@@ -104,7 +104,7 @@ python -m sglang.launch_server \
 
 The parameters above are illustrative — EAGLE's tree parameters (`topk`, total draft tokens, tree depth) all affect the measured acceptance and the per-iteration cost. SGLang's docs document the tuning surface; verify against the pinned release.
 
-<!-- needs-research: EAGLE's tree-parameter defaults and the SGLang / vLLM flag names rotate with releases. Verify the current recommended configuration from the EAGLE repository and the engine's speculative-decoding guide. -->
+EAGLE's tree-parameter defaults (SGLang exposes `--speculative-num-steps`, `--speculative-eagle-topk`, and `--speculative-num-draft-tokens` as the three knobs that control tree shape; see <https://docs.sglang.ai/advanced_features/speculative_decoding.html>) rotate with releases; verify the current recommended configuration from the EAGLE repository and the engine's speculative-decoding guide.
 
 ## Lookahead decoding — n-gram cache, no training
 
@@ -135,7 +135,7 @@ The parameters above are illustrative — EAGLE's tree parameters (`topk`, total
 
 Lookahead's reference implementation ships with Hugging Face transformers and has partial integrations into other engines; the exact deployment pattern depends on your engine. Verify against the engine's speculative-decoding guide and the Lookahead reference repo.
 
-<!-- needs-research: Lookahead's integration into vLLM / SGLang / TRT-LLM is less mature than Medusa / EAGLE as of this writing; check each engine's docs for current support. The reference implementation is primarily published alongside the paper's repo. -->
+Lookahead's integration into the mainstream engines is typically narrower than Medusa / EAGLE; check each engine's docs for current support and consult the reference implementation published alongside the paper's repo.
 
 ## Choosing between the schemes
 
@@ -174,7 +174,7 @@ The three schemes in this chapter share some but not all of chapter 01's deploym
 | Engine support breadth | broad | broad on major engines | SGLang / vLLM / TRT-LLM; verify | narrower |
 | Acceptance rate on open workloads | moderate (`α ≈ 0.6–0.8`) | typically higher than draft-target | typically highest of the four | high on repetitive, low on open-ended |
 
-<!-- needs-research: the specific "typically higher" / "typically highest" phrasing is a summary of the EAGLE and Medusa papers' reported numbers on common benchmarks; your workload may differ. Treat the ordering as a starting hypothesis, not a conclusion — measure. -->
+The "typically higher" / "typically highest" phrasing in the last row summarises the EAGLE and Medusa papers' reported numbers on common benchmarks; treat the ordering as a starting hypothesis, not a conclusion — measure on your workload.
 
 ## Monitoring is identical
 

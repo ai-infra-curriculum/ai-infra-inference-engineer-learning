@@ -22,7 +22,7 @@ By the end of this chapter you can:
 - Write the hand-off bundle to the fine-tuning peer when a retrain is the right action, and the rejection criteria that distinguish "retrain" from "the engine is broken."
 - Carry the same lifecycle shape to Medusa, EAGLE, and Lookahead with the appropriate simplifications (Medusa / Lookahead have one artefact to version; EAGLE has two like draft-target).
 
-<!-- needs-research: specific org-level model-registry patterns and promotion-ritual tooling (MLFlow / Weights & Biases / in-house) are organisation-dependent. The contract below is engine-and-tool-agnostic; implement with whichever registry your org already runs. -->
+Specific org-level model-registry patterns and promotion-ritual tooling (MLFlow, Weights & Biases, in-house) are organisation-dependent; the contract below is engine-and-tool-agnostic — implement it with whichever registry your org already runs.
 
 ## The pair as the unit
 

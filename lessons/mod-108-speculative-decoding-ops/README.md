@@ -40,7 +40,7 @@ Draft-model **training and fine-tuning** live at [`fine-tuning-engineer`](https:
 
 Rule of thumb: *if the fix is "retrain the drafter," that is the fine-tuning peer. If the fix is "swap the drafter to a different checkpoint we already have," "change `k`," "change which tenants get speculative decoding," or "roll back to the previous `(target, draft)` pair," that is this module.*
 
-<!-- needs-research: the exact scope of the `fine-tuning-engineer` track at this org — specifically whether draft-model distillation is in-scope at level 30 or escalates to a research org. The hand-off interface in chapter 04 and chapter 06 should be verified against the sibling track's charter when that curriculum lands. -->
+The exact scope of the `fine-tuning-engineer` track at this org — specifically whether draft-model distillation is in-scope at level 30 or escalates to a research org — depends on the sibling track's charter; verify the hand-off interface in chapter 04 and chapter 06 against that charter when the curriculum lands.
 
 ## Boundary against module 103
 
