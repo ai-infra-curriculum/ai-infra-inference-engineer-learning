@@ -58,7 +58,7 @@ The engine runs a single autoregressive decode loop, but the output stream is lo
 
 The transitions between content kinds are driven by special tokens the model was trained to emit (`<think>…</think>` or a model-specific equivalent) or by structured sampling that the engine enforces. The engine recognises the transition and tags each outgoing token with its channel.
 
-<!-- needs-research: the specific transition-token protocol differs per model family — DeepSeek-R1 uses `<think>` / `</think>` tokens; OpenAI's reasoning models emit reasoning items as distinct response-output items rather than inline tokens; Anthropic's extended thinking produces `thinking` content blocks separate from the final `text` content. Verify the per-model convention before building the channel splitter. -->
+The specific transition protocol differs per model family — DeepSeek-R1 uses `<think>` / `</think>` tokens and vLLM exposes them via a `deepseek_r1` reasoning parser ([vLLM reasoning-outputs docs](https://docs.vllm.ai/en/latest/features/reasoning_outputs/)); OpenAI's reasoning models emit reasoning items as distinct output items on the Responses API rather than inline tokens; Anthropic's extended thinking produces `thinking` content blocks separate from the final `text` content ([Claude streaming docs](https://platform.claude.com/docs/en/build-with-claude/streaming)). Verify the per-model convention before building the channel splitter.
 
 Two user-visible SLOs replace the single text-serving TTFT:
 
@@ -138,9 +138,9 @@ Streaming emits event-typed frames: `response.reasoning.delta`, `response.output
 }
 ```
 
-Streaming emits `content_block_start` / `content_block_delta` / `content_block_stop` events, with the block index increasing as the stream moves from thinking to text.
+Streaming emits `content_block_start` / `content_block_delta` / `content_block_stop` events, with the block index increasing as the stream moves from thinking to text — the documented order on the Claude Messages API is `message_start`, then a `content_block_start` for the `thinking` block with `thinking_delta` and `signature_delta` events, a `content_block_stop`, then a `content_block_start` for the `text` block with `text_delta` events, and finally a `message_stop` ([Claude streaming docs](https://platform.claude.com/docs/en/build-with-claude/streaming)).
 
-<!-- needs-research: both API shapes evolve. Confirm the current event names, block types, and whether reasoning content is returned in raw form or as a summary (OpenAI returns a reasoning *summary* for most of its reasoning models rather than the full trace; this is a product decision, not an infrastructure one). Cite the current OpenAI Responses docs and Anthropic extended-thinking docs. -->
+On the OpenAI side, the Responses API exposes a `reasoning.summary` parameter (`auto` / `concise` / `detailed`) and returns a natural-language *summary* of the reasoning for most reasoning models rather than the raw trace — a product decision, not an infrastructure one ([OpenAI Responses API announcement](https://openai.com/index/new-tools-and-features-in-the-responses-api/)). Both surfaces evolve; verify event names and whether raw-trace vs. summary is returned against the current provider docs before shipping the splitter.
 
 The inference engineer owns:
 

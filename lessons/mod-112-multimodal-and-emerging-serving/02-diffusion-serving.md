@@ -60,10 +60,10 @@ The dominant cost line is stage 4, and inside stage 4 the dominant lever is the 
 
 A scheduler is the integration method the denoising loop uses to turn "the model's predicted noise at step `t`" into "the latent at step `t-1`." Different schedulers admit different step-count budgets at comparable quality. The four families an inference engineer should recognise:
 
-- **DDIM (Denoising Diffusion Implicit Models).** The canonical reference. Deterministic, well-studied, needs around 50 steps on SD-class models for the quality the model was trained for. <!-- needs-research: Song, Meng, Ermon, "Denoising Diffusion Implicit Models," ICLR 2021 — arXiv:2010.02502. Verify current best-practice step counts per model family. -->
-- **DPM-Solver / DPM-Solver++ / DPM-Solver-Multistep.** Higher-order ODE solvers; typically cut the step count to 20–25 at matching quality. Default in a lot of 2024–2026 deployments. <!-- needs-research: Lu et al., "DPM-Solver: A Fast ODE Solver for Diffusion Probabilistic Model Sampling in Around 10 Steps," NeurIPS 2022 — arXiv:2206.00927; and the follow-up "DPM-Solver++" — arXiv:2211.01095. -->
+- **DDIM (Denoising Diffusion Implicit Models).** The canonical reference. Deterministic, well-studied, needs around 50 steps on SD-class models for the quality the model was trained for. See Song, Meng, Ermon, "Denoising Diffusion Implicit Models," ICLR 2021 ([arXiv:2010.02502](https://arxiv.org/abs/2010.02502)); verify current best-practice step counts per model family before pinning.
+- **DPM-Solver / DPM-Solver++ / DPM-Solver-Multistep.** Higher-order ODE solvers; typically cut the step count to 20–25 at matching quality. Default in a lot of 2024–2026 deployments. See Lu et al., "DPM-Solver" (NeurIPS 2022, [arXiv:2206.00927](https://arxiv.org/abs/2206.00927)) and the follow-up "DPM-Solver++" ([arXiv:2211.01095](https://arxiv.org/abs/2211.01095)).
 - **Euler / Euler-ancestral / Heun.** Simple first- or second-order solvers; competitive at 20–30 steps; "ancestral" variants add noise per step and break reproducibility (same seed → different image). Popular with users who want sampling diversity.
-- **LCM / Consistency-distilled schedulers.** The model has been separately *distilled* into a few-step student that can produce a reasonable image in 2–8 steps. LCM-LoRA is a lightweight adapter that retrofits a Stable-Diffusion-class base. Latency drops by an order of magnitude at some cost to peak image quality. <!-- needs-research: Song et al., "Consistency Models," ICML 2023 — arXiv:2303.01469; Luo et al., "LCM-LoRA: A Universal Stable-Diffusion Acceleration Module," arXiv:2311.05556. Confirm current state-of-the-art few-step distillations and their quality-vs-latency placement. -->
+- **LCM / Consistency-distilled schedulers.** The model has been separately *distilled* into a few-step student that can produce a reasonable image in 2–8 steps. LCM-LoRA is a lightweight adapter that retrofits a Stable-Diffusion-class base. Latency drops by an order of magnitude at some cost to peak image quality. See Song et al., "Consistency Models" (ICML 2023, [arXiv:2303.01469](https://arxiv.org/abs/2303.01469)) and Luo et al., "LCM-LoRA" ([arXiv:2311.05556](https://arxiv.org/abs/2311.05556)); verify current few-step distillations and their quality-vs-latency placement against the base model you deploy.
 
 The engineering decision is a Pareto point on `(steps, scheduler) → (latency, quality)`. Chapter 05 of module 110 (throughput-vs-latency Pareto) is the pattern; the axes here are different but the method is the same:
 
@@ -163,7 +163,7 @@ Video diffusion (think AnimateDiff-style temporal U-Nets, Stable Video Diffusion
 - Asynchronous response patterns (job submission → status polling / webhook → result retrieval) rather than request-response.
 - A per-request cost that is a meaningful fraction of a GPU-hour and should be billed per completion rather than per request.
 
-<!-- needs-research: the video and 3D diffusion state of the art evolves fast. Cite the specific models and pipelines (Stable Video Diffusion, Wan, Hunyuan video, DreamFusion / SDS, Instant3D, Gaussian Splatting diffusion) in the module's `resources.md` and verify current scheduler / step defaults before quoting numbers. -->
+The video and 3D diffusion landscape moves fast; model names and scheduler / step defaults quoted here are placeholders — cite the specific models and pipelines in the module's `resources.md` for the release you deploy.
 
 ## The response path: blob storage vs. inline
 

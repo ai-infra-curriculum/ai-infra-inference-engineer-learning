@@ -60,7 +60,7 @@ A worked example — the shape most 2026 open-weights VLMs follow (verify number
 - Detail: `low` → single 448×448 downsample; `high` → the image is tiled into K tiles of 448×448 plus a 448×448 thumbnail, so `(K + 1) × 1024` patches.
 - Some encoders collapse adjacent 2×2 patch groups (`pixel_shuffle`) before projection — divides the count by 4.
 
-<!-- needs-research: the exact tiling layout and `pixel_shuffle` behaviour varies per model family (LLaVA-OneVision, Qwen2-VL / Qwen2.5-VL, Pixtral, InternVL, Molmo). Confirm `N_visual` against the model's `preprocessor_config.json` and the encoder's `image_processor` logic before quoting a number on a billing dashboard. -->
+The exact tiling layout and `pixel_shuffle` behaviour differ per model family (LLaVA-OneVision, Qwen2-VL / Qwen2.5-VL, Pixtral, InternVL, Molmo). Derive `N_visual` from the deployed model's `preprocessor_config.json` and image-processor code before quoting a number on a billing dashboard.
 
 The lesson: **a VLM request has an input length you cannot bound at the API edge from `len(messages[].content.text)` alone**. The ingress has to run image-preprocess (or at least an image-metadata parse) to even know whether the request will fit in the model's context window. The admission-decision chapter (module 103) that assumed `prefill_tokens = sum(tokenize(message.content))` has a new term.
 
@@ -116,7 +116,7 @@ Default: content hash of raw bytes, computed in the preprocess sidecar in parall
 
 A chat with three images in message `i` and the same three images reused in message `i+1` is a common pattern (think an iterative design review where the user attaches the same mockups over several turns). The engine must cache each image's visual-token segment separately, keyed by the image hash, so that a later turn that reorders or adds images can still reuse the ones that match.
 
-Engine-level support here is uneven as of 2026; several open-weights VLM serving stacks treat the first image's visual tokens as "part of the prompt" and lose the cache on any image-list change. <!-- needs-research: confirm current multi-image prefix-cache support in vLLM / SGLang / TRT-LLM for the VLM families they list; cite the specific flag or config that enables it, and the fallback behaviour when it is off. -->
+Engine-level support here varies in 2026. vLLM's multimodal API accepts an optional per-item UUID that is folded into the prefix-cache key, so repeating the same image with the same `uuid` hits the cache while a different image at the same text position gets a distinct entry ([vLLM multimodal-inputs docs](https://docs.vllm.ai/en/stable/features/multimodal_inputs/)); confirm the equivalent surface on SGLang and TRT-LLM against the release you pin.
 
 ## The per-image token budget
 
@@ -149,7 +149,7 @@ def estimate_visual_tokens(image_meta, detail, encoder_cfg):
     return tokens
 ```
 
-<!-- needs-research: the tiling rule, thumbnail inclusion, and `pixel_shuffle` ratio differ per VLM family (LLaVA-OneVision, Qwen2.5-VL, Pixtral, InternVL, Molmo). Replace this stub with the specific model's documented formula before pricing a request. -->
+The tiling rule, thumbnail inclusion, and `pixel_shuffle` ratio above are a stub. Each VLM family (LLaVA-OneVision, Qwen2.5-VL, Pixtral, InternVL, Molmo) has its own documented formula — replace the body of `estimate_visual_tokens` with that formula before pricing a request.
 
 The number returned feeds the admission control from module 103: a 12-image request with 1600 visual tokens per image is a 19200-visual-token prefill request before text, and the scheduler should treat it accordingly.
 

@@ -61,7 +61,7 @@ Pick one of the four on-device runtimes (llama.cpp, MLX, MLC-LLM, ExecuTorch) th
 - RAM / VRAM usage.
 - Disk size of the model file.
 
-If you can't run on the device class your product targets (e.g., you don't have an Android phone for an on-device Android app), run on your development machine and document the gap: "my laptop can run a 7B at 20 tok/s; a Pixel 7 at 4-bit quantization will run it at ~5 tok/s" with a cited source for the mobile number, or a `<!-- needs-research: ... -->` marker.
+If you can't run on the device class your product targets (e.g., you don't have an Android phone for an on-device Android app), run on your development machine and document the gap: "my laptop can run a 7B at 20 tok/s; a Pixel 7 at 4-bit quantization will run it at ~5 tok/s" with a cited source for the mobile number, or an explicit unresolved-citation note in the RFC if no strong source is to hand.
 
 ### Deliverable D — the one-page RFC
 
@@ -97,7 +97,7 @@ Attach the discussion summary as a follow-on page to the RFC.
 
 ## Fallbacks for constrained environments
 
-- **No mobile / iPad / Apple silicon available.** Use llama.cpp on whatever Linux / Windows / Intel-Mac machine you have; the per-platform latency numbers you cite in the RFC come from published community benchmarks (cite them explicitly; mark with `<!-- needs-research: ... -->` if you can't find a strong primary).
+- **No mobile / iPad / Apple silicon available.** Use llama.cpp on whatever Linux / Windows / Intel-Mac machine you have; the per-platform latency numbers you cite in the RFC come from published community benchmarks (cite them explicitly; if no strong primary source exists, flag the number as unresolved in the RFC rather than quoting it bare).
 - **No real stakeholder to review.** Pair with another curriculum participant or a colleague; do a mock review. Document the exercise as a mock in the deliverable-E summary; it is still worth the discipline.
 - **Product feature doesn't match any example.** That's fine; invent one. The exercise is the decision discipline, not the industry relevance of the feature.
 

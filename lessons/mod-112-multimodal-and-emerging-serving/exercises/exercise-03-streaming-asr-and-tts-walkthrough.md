@@ -17,7 +17,7 @@ You will serve a Whisper-class ASR with streaming decode, a modern TTS model wit
 - Chapter 03 of this module read.
 - Chapter 02 of module 111 (streaming SSE / WebSocket) read — the chunk-discipline and cancellation machinery are reused here.
 - Python 3.11+, `websockets` (server) or `fastapi` with WebSocket support, `aiortc` if you want WebRTC on the server side.
-- A streaming ASR runtime. In 2026, reasonable choices: `faster-whisper` (CTranslate2-based Whisper), `whisper.cpp` (GGML-based, CPU + GPU), NVIDIA NeMo Parakeet / Canary (streaming), or a hosted provider's ASR streaming endpoint. <!-- needs-research: confirm the current streaming-ASR runtime recommendations; the landscape changed meaningfully across 2024–2026. -->
+- A streaming ASR runtime. In 2026, reasonable choices: `faster-whisper` (CTranslate2-based Whisper, which streams via chunking), `whisper.cpp` (GGML-based, CPU + GPU), NVIDIA NeMo Parakeet / Canary (Parakeet TDT is commonly cited as a low-latency production option, Canary as higher-accuracy batch), or a hosted provider's ASR streaming endpoint. The landscape moved meaningfully across 2024–2026; re-check vendor positioning against your target latency before committing.
 - A TTS runtime. Reasonable 2026 choices: Coqui XTTS (if still maintained — verify), StyleTTS 2, Fish-Speech, OuteTTS, or a hosted provider's streaming TTS endpoint.
 - Access to an LLM endpoint for the middle stage — any OpenAI-compatible chat endpoint you deployed earlier in the curriculum.
 - A microphone-capable client: a browser with `MediaStream` is fine; a Python script using `sounddevice` is fine; a smartphone with a WebRTC demo app is fine.

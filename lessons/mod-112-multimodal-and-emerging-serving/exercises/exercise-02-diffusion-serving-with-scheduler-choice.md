@@ -16,7 +16,7 @@ You will deploy a diffusion model, run a scheduler sweep at several step counts,
 
 - Chapter 02 of this module read.
 - A GPU host (24 GB+ VRAM for SDXL-class; 48 GB+ for FLUX.1 / SD3). A single-GPU box is enough; multi-GPU batches multiply throughput but are not required.
-- A diffusion model and runtime. Reasonable 2026 candidates (verify current recommendations): Stable Diffusion XL 1.0 (community baseline), FLUX.1-schnell / FLUX.1-dev, Stable Diffusion 3 / 3.5. For runtime: Hugging Face `diffusers` with `StableDiffusionXLPipeline` / `FluxPipeline`, ComfyUI's API mode, or vLLM's / SGLang's diffusion support if available in your pinned release. <!-- needs-research: confirm current vLLM / SGLang diffusion-support status; the mainline inference engines historically did not run diffusion, but 2025–2026 saw experimental support land. -->
+- A diffusion model and runtime. Reasonable 2026 candidates (verify current recommendations): Stable Diffusion XL 1.0 (community baseline), FLUX.1-schnell / FLUX.1-dev, Stable Diffusion 3 / 3.5. For runtime: Hugging Face `diffusers` with `StableDiffusionXLPipeline` / `FluxPipeline`, ComfyUI's API mode, or one of the mainline inference engines' diffusion paths — SGLang-Diffusion ships text-to-image and image-edit endpoints covering Flux, Wan, Hunyuan, Qwen-Image and others ([LMSYS SGLang-Diffusion announcement](https://www.lmsys.org/blog/2025-11-07-sglang-diffusion/)), and vLLM-Omni serves DiT-based image / video models alongside LLMs ([vLLM-Omni repo](https://github.com/vllm-project/vllm-omni)). Pin the model and engine version against your release.
 - Python 3.11+, `diffusers`, `torch`, `transformers`, `openai-clip` or `open_clip_torch` for CLIP-score measurement, `matplotlib` for plotting.
 - A prompt dataset for evaluation — a small subset (100–500 prompts) of a public benchmark (e.g. PartiPrompts, DrawBench, GenAI-Bench) or a product-representative prompt list.
 
@@ -56,7 +56,7 @@ For each combination record:
 - CLIP-score (OpenAI CLIP ViT-L/14 or OpenCLIP ViT-H/14, cosine similarity between image embedding and prompt embedding, averaged across the K images).
 - Optional: a small human A/B comparison against a reference (DDIM 50) on a 10-image random subset — note this is inherently subjective; use it for sanity, not as the primary metric.
 
-<!-- needs-research: the LCM / distillation support depends on the base model. SDXL has `LCM-LoRA`; FLUX.1-schnell is natively few-step. Confirm which schedulers are compatible with your chosen base model before running the sweep. -->
+LCM / distillation support depends on the base model — SDXL pairs with the LCM-LoRA adapter ([arXiv:2311.05556](https://arxiv.org/abs/2311.05556)), while FLUX.1-schnell is natively few-step and does not use the LCM scheduler. Confirm which schedulers are compatible with your chosen base model before running the sweep.
 
 ### Deliverable C — the Pareto plot and operating-point recommendation
 

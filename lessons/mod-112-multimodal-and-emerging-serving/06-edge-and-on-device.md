@@ -24,7 +24,7 @@ By the end of this chapter you can:
 
 ### llama.cpp
 
-- **Project.** <https://github.com/ggml-org/llama.cpp> (originated as `ggerganov/llama.cpp`; migrated to the `ggml-org` GitHub org). <!-- needs-research: confirm current canonical org / repo path; the migration from `ggerganov` to `ggml-org` happened and the project home may continue to shift. -->
+- **Project.** <https://github.com/ggml-org/llama.cpp> (originated as `ggerganov/llama.cpp`; the canonical path is the `ggml-org` GitHub org as of this writing — re-check before pinning in a long-lived doc, since open-source project homes can shift).
 - **What it is.** A C/C++ runtime for GGUF-quantized models. CPU-first, with GPU offload via Metal (Apple), CUDA (NVIDIA), ROCm (AMD), Vulkan, OpenCL, SYCL, and Vulkan-based mobile backends.
 - **Model format.** GGUF — self-describing quantized tensor files. Quantization types include `Q2_K` through `Q8_0` and newer `IQ`-prefixed types; the per-weight bit budget ranges from ~2 bits (very small) to 8 bits (near-lossless).
 - **Target devices.** Everything. Desktop (Linux, macOS, Windows), server (CPU and GPU), mobile (via Android NDK and iOS via Metal), embedded (Raspberry Pi, Jetson).

@@ -16,7 +16,7 @@ You will deploy a reasoning-capable open-weights model, expose the budget parame
 
 - Chapter 04 of this module read.
 - Chapter 02 of module 111 (streaming, cancellation) read.
-- A GPU host capable of running a reasoning-capable open-weights model. Reasonable 2026 candidates (verify against your engine's current support): DeepSeek-R1-Distill-Qwen-32B, DeepSeek-R1 (if your hardware supports the full MoE), QwQ-32B / 72B, or a recent Qwen3 / Llama-4 reasoning variant. <!-- needs-research: confirm current open-weight reasoning models that are mainline-supported on vLLM / SGLang / TRT-LLM. -->
+- A GPU host capable of running a reasoning-capable open-weights model. Reasonable 2026 candidates (verify against your engine's current support): DeepSeek-R1-Distill-Qwen-32B, DeepSeek-R1 (if your hardware supports the full MoE), QwQ-32B / 72B, or a recent Qwen3 / Llama-4 reasoning variant. vLLM's reasoning-outputs parser lists DeepSeek-R1 and QwQ-32B via the `deepseek_r1` parser ([vLLM reasoning-outputs docs](https://docs.vllm.ai/en/latest/features/reasoning_outputs/)); confirm the equivalent mainline support list on SGLang / TRT-LLM against the version you pin.
 - An engine that recognises the model's reasoning-transition tokens or that can be configured to emit `reasoning` content distinctly. In 2026 vLLM, SGLang, and TRT-LLM all have some reasoning-mode support — confirm against the version you pin.
 - Python 3.11+, the OpenAI client SDK, `anthropic` SDK (to mirror the shape).
 - The streaming-proxy from module 111 exercise 02 (optional; chapter 02's cancellation plumbing is reused here).
