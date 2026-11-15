@@ -126,7 +126,7 @@ Operator profile: niche in a datacentre GPU fleet; valuable when the serving foo
 
 ### Hugging Face TGI — Text Generation Inference
 
-Historically one of the four major open-source LLM serving engines (alongside vLLM, SGLang, TRT-LLM). Hugging Face has signalled that TGI's maintenance posture has changed and that recommended serving for new deployments points elsewhere (`vllm`, HF Inference Endpoints, or the engine that fits the hardware). <!-- needs-research: confirm the exact current status of TGI (archived / maintenance-only / community-forked) and the Hugging Face announcement date before next revision; CURRICULUM.md references a 2026 archival signal from the sibling performance-engineer cycle. -->
+Historically one of the four major open-source LLM serving engines (alongside vLLM, SGLang, TRT-LLM). Hugging Face moved TGI into maintenance mode on 2025-12-11 and archived the GitHub repository (read-only) on 2026-03-21, pointing new deployments at vLLM, SGLang, or local engines such as llama.cpp / MLX going forward (see <https://github.com/huggingface/text-generation-inference>).
 
 Why we still teach it as a compare-point: a lot of production fleets still run TGI, a lot of blog posts and tutorials still cite it, and you will meet operators whose mental model is TGI-shaped. Knowing where TGI sits on the axes above lets you translate advice from a TGI world to a vLLM / SGLang / TRT-LLM world without getting burned.
 
@@ -135,7 +135,7 @@ Why we still teach it as a compare-point: a lot of production fleets still run T
 You will interact with these as either (a) *build-vs-buy* alternatives you evaluate in a vendor RFC (module 114), or (b) fall-back providers you route *through* when self-hosted capacity is short. You do not operate them, but you must be able to reason about them.
 
 - **NVIDIA NIM** — NVIDIA Inference Microservices. Containerised, enterprise-supported serving built on TensorRT-LLM / Triton / Dynamo, delivered as pullable images from the NVIDIA registry. The managed-NVIDIA option for shops that want TRT-LLM-grade performance without owning the build pipeline.
-- **Fireworks AI** — commercial inference provider. Public positioning emphasises a proprietary serving stack and OpenAI-compatible endpoints. <!-- needs-research: current product-specific feature claims (FireAttention variants, speculative-decoding offerings) change frequently; verify against vendor docs before committing. -->
+- **Fireworks AI** — commercial inference provider. Public positioning emphasises a proprietary serving stack and OpenAI-compatible endpoints; verify specific feature claims (proprietary attention variants, speculative-decoding offerings) against the current vendor docs at <https://docs.fireworks.ai/> before committing.
 - **Together AI** — commercial inference provider offering OpenAI-compatible endpoints for a catalogue of open-weight models.
 - **Baseten** — model-deployment platform; serves models as auto-scaled endpoints with support for custom model code via Truss.
 - **Modal** — serverless compute platform; not inference-specific but widely used to host custom inference workloads behind an HTTP endpoint.

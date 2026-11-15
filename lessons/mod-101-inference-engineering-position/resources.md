@@ -60,7 +60,7 @@ Primary / citable references for the topics covered in this module. Prefer offic
 
 - Project home — <https://github.com/huggingface/text-generation-inference>
 - Documentation — <https://huggingface.co/docs/text-generation-inference/>
-- <!-- needs-research: lock the current maintenance status of TGI against Hugging Face's most recent announcement; CURRICULUM.md references a 2026 archival signal — verify the exact date and current recommended-serving guidance. -->
+- Maintenance status: TGI was moved into maintenance mode on 2025-12-11 (last release v3.3.7 on 2025-12-19) and the GitHub repository was archived (read-only) on 2026-03-21; Hugging Face recommends vLLM, SGLang, or local-compatible engines (llama.cpp / MLX) for new deployments.
 
 ## Commercial compare-points (vendor-primary sources)
 

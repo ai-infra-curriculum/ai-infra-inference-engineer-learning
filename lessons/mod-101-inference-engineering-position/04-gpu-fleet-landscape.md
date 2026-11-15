@@ -55,7 +55,7 @@ Operator fit: smaller models, high density per rack, cost-constrained workloads 
 Launched 2024–2025. NVIDIA's current flagship generation.
 
 - **Numeric formats** — hardware FP4 support (NVFP4 and microscaling MXFP4 variants) added on top of the Hopper FP8 / FP16 / BF16 matrix. The FP4 path is the signature capability of the generation.
-- **Memory** — B200: 192 GB HBM3e; Blackwell Ultra: higher-still HBM3e capacity. <!-- needs-research: lock Blackwell Ultra per-GPU HBM capacity against the current NVIDIA spec sheet; the SKU matrix is still shifting. -->
+- **Memory** — B200: 192 GB HBM3e; Blackwell Ultra (B300): 288 GB HBM3e from 12-high stacks.
 - **Interconnect** — NVLink 5; much higher aggregate per-GPU bandwidth than NVLink 4.
 - **GB200 / GB300** — rack-scale designs that pair Blackwell GPUs with Grace CPUs over NVLink-C2C. **NVL72** configurations unify 72 GPUs behind a single NVLink Switch domain, exposing them as a single very-large coherent compute pool for very-large-model serving and training.
 - **Engine maturity** — TRT-LLM / Dynamo lead on day-one Blackwell support; vLLM / SGLang follow close behind. FP4 support in a given engine lags the hardware ship date by months; verify current state against release notes.
@@ -64,7 +64,7 @@ Operator fit: new-build fleets targeting the FP4 numeric path and very large mod
 
 ### Vera Rubin — the pre-announcement generation
 
-The announced next-generation NVIDIA platform after Blackwell. NVIDIA has publicly named Rubin / Rubin Ultra / Vera CPU as the planned successor; <!-- needs-research: production ship dates, exact HBM / interconnect specs, and the inference-engine support timeline all shift quarterly — refresh against NVIDIA GTC announcements before next cycle. --> for this role, Rubin is a *planning horizon* input (vendor roadmaps for capital-budget cycles) rather than a hardware you operate today.
+The announced next-generation NVIDIA platform after Blackwell. NVIDIA named Rubin / Rubin Ultra / Vera CPU as the planned successor at GTC 2025 and confirmed production shipments to hyperscalers in H2 2026 at GTC 2026; verify current HBM / interconnect specs and inference-engine support against the latest GTC announcements before planning. For this role, Rubin is a *planning horizon* input (vendor roadmaps for capital-budget cycles) rather than a hardware you operate today.
 
 Operator fit: factor into 18-month fleet-refresh plans; don't commit tooling to it until there is a shipped SKU and engine support.
 
@@ -74,7 +74,7 @@ Operator fit: factor into 18-month fleet-refresh plans; don't commit tooling to 
 
 The current production AMD data-centre GPUs. The strategic story: a credible second source to Hopper-class performance, pitched hard at the LLM-serving use case because of the very large HBM capacity per device.
 
-- **Numeric formats** — FP16 / BF16, FP8, INT8; MI325X extends the FP8 matrix. <!-- needs-research: confirm FP4 support status on current and next AMD generation against AMD's ROCm matrix. -->
+- **Numeric formats** — FP16 / BF16, FP8, INT8; MI325X extends the FP8 matrix. MI300X / MI325X do not have hardware FP4 — AMD's FP4 path (MXFP4 / MXFP6 / MXFP8 microscaling types) arrived with the MI350 / MI355X generation under ROCm 7.0.
 - **Memory** — MI300X: 192 GB HBM3; MI325X: 256 GB HBM3e. Very large per-device HBM capacity — a differentiating story for serving large dense models with fewer GPUs per deployment.
 - **Interconnect** — Infinity Fabric for GPU-to-GPU inside a node; ROCm RCCL for the collective-communication library equivalent to NCCL.
 - **Engine maturity** — vLLM, SGLang, and TRT-LLM-adjacent paths (via AMD's own stack) all have ROCm support with varying feature parity; LLM-serving on AMD has moved from "experimental" to "deployable" over the last 24 months. Feature parity to NVIDIA is **not** uniform across engines — verify your specific feature set (FP8, speculative decoding, prefix caching, LoRA, disaggregated serving) against the ROCm support matrix before committing.
@@ -96,7 +96,7 @@ Operator fit: AWS-committed shops with volume commitments on Neuron capacity; wo
 
 Google's custom accelerator, accessible via Google Cloud (and, for research, Kaggle / TRC).
 
-- **v5p** — scale-up training TPU; v5e — serving-oriented, cost-optimised; v6 is the current generation branded as Trillium, with Ironwood as the inference-focused successor announced for 2025. <!-- needs-research: confirm Ironwood general availability date, inference-engine support, and compare the v6 Trillium vs. Ironwood positioning against the current Google Cloud docs — the TPU product line names rotate. -->
+- **v5p** — scale-up training TPU; v5e — serving-oriented, cost-optimised; v6e / v6p is the Trillium generation; Ironwood (v7) is the inference-focused successor, which entered preview in late 2025 and reached general availability in 2026 ([Google Cloud Ironwood GA](https://cloud.google.com/blog/products/compute)).
 - **Interconnect** — ICI (Inter-Chip Interconnect) at pod scale; distinctive "pod-of-chips" topology that is logically very different from an NVIDIA 8-GPU HGX node.
 - **Engine maturity** — vLLM TPU backend exists; JAX / Pallas kernels are the native path; Pathways and XLA compile models to TPU-executable artefacts. LLM-serving on TPU is deployable but the operator ergonomics (debugging, profiling, kernel-swap flexibility) differ enough from GPU-serving that your runbooks need separate chapters.
 
@@ -135,8 +135,8 @@ An FP8 or FP4 claim without a hardware tensor-core path is emulation and does no
 | Axis | NVIDIA Hopper / Blackwell | AMD MI300 / MI325 | AWS Trainium / Inferentia | Google TPU v5p / v6 / Ironwood |
 |---|---|---|---|---|
 | Engine support (vLLM / SGLang / TRT-LLM) | first-class, immediate | growing, varying by engine | vLLM + Neuron plug-in, narrower | vLLM TPU backend + XLA; narrower |
-| FP8 hardware path | Hopper+ | MI300+ | <!-- needs-research --> | <!-- needs-research --> |
-| FP4 hardware path | Blackwell+ | <!-- needs-research --> | <!-- needs-research --> | <!-- needs-research --> |
+| FP8 hardware path | Hopper+ | MI300+ | Inferentia2 / Trainium2+ | Ironwood+ (not Trillium) |
+| FP4 hardware path | Blackwell+ | MI350+ (not MI300 / MI325) | Trainium3+ (not Trainium2) | not natively supported |
 | HBM per device | up to ~192 GB (B200) | up to 256 GB (MI325X) | varies by generation | varies by generation |
 | Intra-rack interconnect | NVLink / NVSwitch (up to 72-GPU NVL72) | Infinity Fabric | AWS proprietary | ICI pod |
 | Open ecosystem for ops | large | moderate | AWS-only | GCP-only |
