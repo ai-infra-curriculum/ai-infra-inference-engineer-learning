@@ -252,9 +252,7 @@ for: 2h
 labels: {severity: ticket}
 ```
 
-The 14.4 / 6 / 1 multipliers are from the SRE workbook's standard recipe for a 30-day SLO. Verify the exact multipliers against the workbook for your window length and your false-positive / false-negative tolerance.
-
-<!-- needs-research: the burn-rate multipliers (14.4, 6, 1, etc.) depend on the window length and the long-window / short-window ratio you choose. The SRE workbook's canonical table assumes a 30-day window; verify for your organisation's window choice. -->
+The 14.4 / 6 / 1 multipliers are from the SRE workbook's canonical multi-window multi-burn-rate table at <https://sre.google/workbook/alerting-on-slos/> (the "recommended parameters" section): for a 99.9% SLO over a 30-day window, 14.4× over 1 hour and 6× over 6 hours page (2 % and 5 % of budget), and 1× over 3 days tickets (10 % of budget). Recompute the multipliers if your window length or budget-burn thresholds differ from that table.
 
 One alert per class per SLO axis is correct. One alert per *tenant* is a cardinality disaster (chapter 01's trap 1). If one tenant blows the SLO, the class-level alert catches it; if one tenant's workload is mis-routed, the burn-rate alert surfaces it as a class-level burn; per-tenant breakdown is a *dashboard*, not an alert.
 

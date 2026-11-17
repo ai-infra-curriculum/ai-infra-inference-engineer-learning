@@ -33,9 +33,7 @@ The components:
 - **Jaeger / Tempo / an APM** as the trace backend — <https://www.jaegertracing.io/>, <https://grafana.com/docs/tempo/latest/>.
 - **A log pipeline** — Loki / Elasticsearch / a cloud native log service. The choice matters less than the sampling discipline below.
 
-The `kube-prometheus-stack` Helm chart (<https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack>) bundles Prometheus Operator + Grafana + AlertManager + exporter CRDs; it is the standard starting point on Kubernetes.
-
-<!-- needs-research: the `kube-prometheus-stack` chart has a release-cadence of weeks and its CRD versions evolve. Pin a version in your deployment and verify against its documented upgrade path. -->
+The `kube-prometheus-stack` Helm chart (<https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack>) bundles Prometheus Operator + Grafana + AlertManager + exporter CRDs; it is the standard starting point on Kubernetes. Pin a specific chart version in your deployment; the chart's `UPGRADE.md` documents breaking changes between major versions, and CRDs (Helm v3) are not auto-updated on `helm upgrade` — the chart docs call this out and require a manual CRD step.
 
 ## Scraping DCGM-exporter
 
@@ -87,8 +85,6 @@ Modern inference engines (vLLM, SGLang, TensorRT-LLM via Triton) expose Promethe
 - vLLM — `/metrics` on the HTTP server; metrics documented at <https://docs.vllm.ai/en/latest/serving/metrics.html>.
 - SGLang — `/metrics` on the HTTP server; metrics documented at <https://docs.sglang.ai/>.
 - TRT-LLM via Triton — port `8002` by default; metrics documented at <https://github.com/triton-inference-server/server/blob/main/docs/user_guide/metrics.md>.
-
-<!-- needs-research: metric names, label spellings, and histogram bucket defaults rotate across releases. Verify the specific names and bucket layouts against the pinned engine release, not against this chapter's examples. -->
 
 A `PodMonitor` (one target per replica, since each engine replica is its own pod):
 
@@ -214,7 +210,7 @@ spec:
           sum by (replica) (rate(scheduler_preemptions_total[5m]))
 ```
 
-<!-- needs-research: the exact metric names (`vllm:time_to_first_token_seconds_bucket`, `tokens_streamed_total`, `cache_hit_tokens_total`) are illustrative — verify against your engine's current `/metrics` output. If the engine doesn't expose a metric you need, synthesise it in a middleware shim as described below. -->
+The metric names shown (`vllm:time_to_first_token_seconds_bucket`, `tokens_streamed_total`, `cache_hit_tokens_total`, etc.) are illustrative — verify against your engine's current `/metrics` output, and if a metric you need is missing, synthesise it in the middleware shim described below.
 
 Three disciplines:
 

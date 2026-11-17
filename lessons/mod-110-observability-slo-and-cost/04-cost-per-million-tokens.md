@@ -157,9 +157,7 @@ cost_per_1M_output_tokens ≈ (320 × $2.26 × 0.8) / (0.512 × 3600)
                          ≈ $0.31 per 1M output tokens
 ```
 
-Decode is more expensive per token because tokens / second is 10× lower than prefill. The right order of magnitude; match against the direct amortisation above (which came out at $208 under less favourable assumptions; the delta is the utilisation and the saturated-decode assumption).
-
-<!-- needs-research: the throughput numbers above are illustrative; measure your fleet against vLLM `benchmark_serving.py`, SGLang's benchmarks, or your production load generator. Model, hardware, parallelism, quantisation, and sequence-length distribution all materially change them. -->
+Decode is more expensive per token because tokens / second is 10× lower than prefill. The right order of magnitude; match against the direct amortisation above (which came out at $208 under less favourable assumptions; the delta is the utilisation and the saturated-decode assumption). The throughput numbers in this worked example are illustrative — model, hardware, parallelism, quantisation, and the sequence-length distribution all move them materially, so measure your own fleet against vLLM's `benchmark_serving.py`, SGLang's benchmarks, or your production load generator before putting a cost SLO on the resulting number.
 
 Three disciplines:
 

@@ -57,9 +57,7 @@ Three traffic-shape options, worst to best:
 - **Mixed prompt / output from a distribution.** `--dataset sharegpt` (ShareGPT replay) or similar. Better. See the vLLM `benchmark_serving.py` dataset options.
 - **Production-replay.** A sampled log of real prompts and real output-length distributions. Best. Requires a load-replay harness (chapter 03 of module 103 or your fleet's existing load generator).
 
-The best practice: produce the curve against production-replay and name the traffic-shape version at the top of the resulting chart.
-
-<!-- needs-research: the exact dataset flags in `vllm/benchmarks/benchmark_serving.py` rotate across releases; the ShareGPT dataset's licence terms are also something to verify before mirroring it. Verify against the pinned engine's benchmark docs. -->
+The best practice: produce the curve against production-replay and name the traffic-shape version at the top of the resulting chart. The exact `--dataset` flag names and defaults in vLLM's benchmarking CLI (<https://docs.vllm.ai/en/latest/benchmarking/cli/>) change across releases; verify against the pinned engine's benchmark docs, and check the ShareGPT dataset's licence terms before mirroring it internally.
 
 ## Metric collection at each point
 

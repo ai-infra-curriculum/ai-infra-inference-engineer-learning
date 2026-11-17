@@ -45,7 +45,7 @@ Real-shape examples (always cite the source for your fleet; these numbers are il
 - **Agent / tool-use:** Latency compounds across turns. An agent that averages 4 turns at 2 s each is 8 s total; shaving 500 ms per turn is 2 s off total. The product impact is on time-to-task-completion, which shows up in user retention over a week.
 - **Reasoning:** The user expects latency. TTFT matters less; TPOT matters because a 30-second thinking phase at 50 tokens / sec vs. 30 tokens / sec is an extra 20 seconds. The product impact is on willingness-to-wait, measurable by abandonment during generation.
 
-<!-- needs-research: dose-response curves for TTFT / TPOT impacts on product KPIs are highly product- and audience-specific. Papers like Nielsen's classic "response times" numbers (<https://www.nngroup.com/articles/response-times-3-important-limits/>) give human-perception thresholds but not the exact revenue dose-response for an LLM product. Verify against your product's analytics, not a cross-industry rule. -->
+The human-perception thresholds behind these shapes trace back to Nielsen's canonical "response times" limits (<https://www.nngroup.com/articles/response-times-3-important-limits/>), which give the 0.1 s / 1 s / 10 s boundaries for "instant", "flow unbroken", and "limit of patience." Nielsen's work covers *perception*, not revenue impact; the dose-response from a latency change to a product KPI is specific to your product, audience, and pricing, and must be measured against your own analytics rather than borrowed from a cross-industry rule.
 
 ### How to measure the arrow
 
@@ -93,9 +93,7 @@ Latency regressions sometimes don't show in a dashboard overlay but show in the 
 - Measure retention at week W+4, W+8, W+12.
 - A statistically significant delta is the latency-attributable churn signal.
 
-This is applied statistics and is typically owned by a product analyst; the inference engineer's job is to produce the exposure signal (which days / users saw bad latency) in a form the analyst can consume. Dashboard 4 from chapter 03 is where this data lives; the exposure flag is a derived series the inference team maintains.
-
-<!-- needs-research: the dose-response and the survival-curve shift from latency are heavily product-specific. The methodology is sound in general; the specific numbers in your product must be measured, not borrowed. -->
+This is applied statistics and is typically owned by a product analyst; the inference engineer's job is to produce the exposure signal (which days / users saw bad latency) in a form the analyst can consume. Dashboard 4 from chapter 03 is where this data lives; the exposure flag is a derived series the inference team maintains. The methodology above is general; the actual magnitude of a survival-curve shift from latency is specific to your product and must be measured against your own cohort data, not borrowed.
 
 ## The "is it worth the ask" one-page memo
 

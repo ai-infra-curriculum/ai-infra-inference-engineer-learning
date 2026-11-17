@@ -46,8 +46,6 @@ Three invariants to carry through:
 
 The engine must emit the components, not just the aggregate. The modern engines (vLLM, SGLang, TensorRT-LLM through the Triton `tensorrtllm_backend`) expose Prometheus histograms covering most of these. The exact metric names drift across releases — the vLLM metrics reference is at <https://docs.vllm.ai/en/latest/serving/metrics.html>; SGLang's is in its documentation at <https://docs.sglang.ai/>; TRT-LLM / Triton exposes a metrics endpoint documented at <https://github.com/triton-inference-server/server/blob/main/docs/user_guide/metrics.md>.
 
-<!-- needs-research: engine-specific metric names (`vllm:time_to_first_token_seconds`, `sglang:...`, `nv_inference_queue_duration_us`) rotate across releases. Verify against the pinned engine's `/metrics` output and release notes rather than against this chapter's example names. -->
-
 Example instrumentation shape in Python (for a middleware you may still need to add — chapter 03 names when you have to synthesise versus when the engine already emits):
 
 ```python
@@ -122,7 +120,7 @@ The DCGM axes an inference engineer reads daily:
 
 The authoritative field-ID reference is <https://docs.nvidia.com/datacenter/dcgm/latest/dcgm-api/dcgm-api-field-ids.html>. The DCGM-exporter config file (`default-counters.csv` or similar) controls which fields are scraped; verify the current filename and layout against the exporter's README.
 
-<!-- needs-research: DCGM profile metrics (`DCGM_FI_PROF_*`) require a profiling-capable GPU and may conflict with concurrent profilers (Nsight, CUPTI). The gating varies by GPU generation and by DCGM version; verify against the DCGM documentation and the GPU Operator release notes. -->
+The `DCGM_FI_PROF_*` fields depend on hardware counters that are only exposed on datacenter GPUs from the Volta generation forward, and the host-engine daemon needs elevated privileges to collect them. The same hardware counters are claimed exclusively by NVIDIA developer tools (Nsight Systems, Nsight Compute), so concurrent profiling either errors out or requires the `dcgmi profile --pause` / `--resume` workaround; the profiling module docs at <https://docs.nvidia.com/datacenter/dcgm/latest/learn/modules/profiling.html> are the authoritative reference.
 
 Three disciplines to carry:
 
@@ -148,9 +146,7 @@ Suggested axis set to export when `TP > 1`:
 | `nccl_time_reducescatter_seconds` | seconds / collective | histogram |
 | `nccl_bytes_allreduce_total` | bytes | counter |
 
-The ratio `nccl_time_total / forward_time_total` is the "collective overhead" signal. For an inference workload on NVLink / NVSwitch, this ratio should sit well below 0.2 for a healthy replica; above that, chapter 05 (Pareto) and module 107's topology chapters say the parallelism shape is wrong for the model or the fabric.
-
-<!-- needs-research: numeric thresholds for healthy "collective overhead" ratios depend heavily on model size, TP degree, and fabric (NVLink vs. InfiniBand vs. RoCE). Verify against your fleet's benchmark data rather than against a cross-fleet rule of thumb. -->
+The ratio `nccl_time_total / forward_time_total` is the "collective overhead" signal. Establish the healthy baseline for your model, TP degree, and fabric with the Pareto sweep in chapter 05; a ratio that rises materially above that baseline is the sign that chapter 05 and module 107's topology chapters call out as the parallelism shape being wrong for the model or the fabric.
 
 ## The memory-pressure axis set
 
