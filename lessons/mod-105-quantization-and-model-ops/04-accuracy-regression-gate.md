@@ -16,7 +16,7 @@ By the end of this chapter you can:
 
 The gate this chapter authors is **narrow by design**: it checks whether a quantised variant of a known model, serving a known workload, regresses within a stated tolerance. It is **not** the full eval-benchmark discipline — that is the model-evaluation-engineer peer, and this chapter cites the boundary explicitly.
 
-<!-- needs-research: specific statistical calibration (bootstrap sample count, significance level, multiple-comparison correction) is a methodology-depth question. This chapter uses defensible defaults; the model-evaluation-engineer peer owns the deeper calibration. -->
+The specific statistical calibration — bootstrap sample count, significance level, multiple-comparison correction — is a methodology-depth question. This chapter uses defensible defaults; the deeper calibration belongs to the model-evaluation-engineer peer.
 
 ## The structural picture — what a release gate is
 

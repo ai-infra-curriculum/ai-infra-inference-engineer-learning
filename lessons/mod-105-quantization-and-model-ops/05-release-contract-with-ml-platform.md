@@ -18,7 +18,7 @@ By the end you can:
 - Hook into the signing workflow (sign the artefact, verify at serving-time load).
 - Run the "what breaks if a field is missing" audit so the contract has teeth.
 
-<!-- needs-research: specific registry implementations vary (MLflow, Weights & Biases, Vertex AI Model Registry, SageMaker Model Registry, Databricks Unity Catalog, HuggingFace Hub, in-house). The contract below is implementation-agnostic; the specific field names and APIs will adapt. -->
+Specific registry implementations (MLflow, Weights & Biases, Vertex AI Model Registry, SageMaker Model Registry, Databricks Unity Catalog, Hugging Face Hub, in-house registries) each have their own schemas and APIs. The contract below is implementation-agnostic; map its fields onto whichever registry your ML-platform peer runs.
 
 ## The structural picture — contract as code
 

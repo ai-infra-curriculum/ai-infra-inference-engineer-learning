@@ -8,7 +8,7 @@ The Hugging Face `safetensors` checkpoint your team downloaded is not what runs 
 
 This chapter is the operator discipline for the format layer: the four formats you will encounter, the conversion recipes between them, and the validation discipline that proves the conversion did not change outputs beyond a stated tolerance.
 
-<!-- needs-research: conversion tool chains rotate (TensorRT-LLM converter paths, HF Optimum ONNX exporter, llama.cpp convert.py vs. convert_hf_to_gguf.py). Verify the specific CLI invocation against the tool version. -->
+Conversion tool chains rotate (llama.cpp retired its old `convert.py` in favour of `convert_hf_to_gguf.py`; TensorRT-LLM reorganises its converter / builder scripts across releases; HF Optimum revises its ONNX exporter CLI). Verify the specific invocation against the tool version you have pinned.
 
 ## The four formats that matter in production
 
@@ -104,7 +104,7 @@ A cross-framework model-exchange format. In the LLM serving world, ONNX is **les
 - The exporter handles the KV cache structure, decoder-only vs. encoder-decoder patterns, and the `past_key_values` plumbing.
 - For LLMs above ~7B, ONNX export can be fragile; verify end-to-end before committing a workflow to it.
 
-<!-- needs-research: ONNX LLM serving maturity varies strongly by model size and architecture. HF Optimum documentation is the authoritative reference for supported models — verify. -->
+ONNX LLM serving maturity varies strongly by model size and architecture. The [HF Optimum ONNX exporter docs](https://huggingface.co/docs/optimum-onnx/en/onnx/usage_guides/export_a_model) are the authoritative reference for which models are supported and how to enable the external-data format for anything over the ~2 GB Protobuf limit.
 
 ## The conversion matrix
 

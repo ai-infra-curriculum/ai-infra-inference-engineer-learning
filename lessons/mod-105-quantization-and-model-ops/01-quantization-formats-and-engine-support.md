@@ -8,7 +8,7 @@ A product team asks "can we quantise this?" The engineer with answer-fluency rep
 
 That is this chapter. By the end you can draw the format × engine × hardware matrix on a whiteboard, name what each format quantises (weights only vs. weights + activations vs. KV), and know which hardware generation unlocks which Tensor Core.
 
-<!-- needs-research: engine support for each format rotates between releases. Verify the specific matrix below against the exact engine version your fleet runs — vLLM, SGLang, and TRT-LLM all add and deprecate quantisation backends across releases. -->
+Engine support for each format rotates between releases; verify the matrix below against your fleet's pinned engine version. The authoritative references are each engine's own quantisation docs ([vLLM "Methods and Schemes"](https://docs.vllm.ai/en/latest/features/quantization/), SGLang quantisation docs, and the TRT-LLM "model quantization" guide).
 
 ## The three axes of a quantisation format
 
@@ -55,7 +55,7 @@ The granularity choice interacts with both the format and the hardware: Blackwel
 | AMD CDNA 3 | MI300X, MI325X | BF16, FP16, FP8, INT8 | FP8 serving on AMD; ROCm path |
 | TPU v5e / v5p / Trillium | — | BF16, INT8 | TPU inference stack; non-NVIDIA path |
 
-<!-- needs-research: AMD and TPU format support rotates; verify current ROCm / JAX-on-TPU support against vendor docs for the generation your fleet runs. -->
+For non-NVIDIA accelerators, cross-reference the vendor docs for your specific generation (ROCm release notes for AMD; the Cloud TPU documentation for Google TPU) — the table above lists only the longest-standing supported types.
 
 **The operator's rule:** before you choose a format, know which Tensor Core your target hardware exposes. FP4 on Hopper is a software fiction (it runs through dequant to FP8 or BF16); FP8 on Ampere is the same (dequant to BF16). You can still *store* the weights at that precision for HBM savings, but you will not get the throughput win.
 
@@ -87,7 +87,7 @@ Both are *block-scaled*: the fine-grained-scale-per-block structure is what make
 
 **MXFP6 and MXFP8** are the 6-bit and 8-bit MX variants; MXINT8 is the integer form. These are also part of the OCP MX spec. Serving-side adoption of MXFP6 / MXFP8 is still emerging; FP4 is where the practical weight-compression wins live on Blackwell.
 
-<!-- needs-research: NVFP4 vs. MXFP4 serving tooling matures through 2025–2026. Verify which variant your TRT-LLM / vLLM build actually emits and which the Blackwell / Vera Rubin generation you target natively executes. -->
+The NVFP4 and MXFP4 formats are both specified under the OCP Microscaling (MX) spec (MXFP4 uses the block-32 / E8M0-scale layout defined there; NVFP4 is NVIDIA's narrower block-16 / FP8-scale variant). Verify which variant your TRT-LLM / vLLM build actually emits and which your target hardware natively executes before fixing a choice.
 
 ### INT8
 
@@ -160,7 +160,7 @@ The matrix drifts release-to-release. Verify against your pinned engine version;
 | SmoothQuant (W8A8) | partial | partial | ✅ | — | — |
 | GGUF Q4 / Q5 / Q6 / Q8 | partial (via GGUF loader) | partial | — | ✅ (native) | — |
 
-<!-- needs-research: cells marked "partial" or "emerging" change release-to-release. Validate for your pinned engine. The authoritative sources: vLLM `docs.vllm.ai/en/latest/features/quantization/`, SGLang quantisation docs, TRT-LLM "model quantization" guide. -->
+Cells marked "partial" or "emerging" change release-to-release; validate for your pinned engine against the engine's own quantisation reference ([vLLM](https://docs.vllm.ai/en/latest/features/quantization/), SGLang, and TRT-LLM each publish a quantisation guide).
 
 **How to read the matrix:**
 - ✅ = first-class support, usually via a documented flag + converter.

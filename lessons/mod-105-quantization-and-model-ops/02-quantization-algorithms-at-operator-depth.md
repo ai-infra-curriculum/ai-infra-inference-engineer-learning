@@ -8,7 +8,7 @@ Chapter 01 named the formats and their engine support. This chapter opens the fo
 
 The algorithm-design depth itself — "should the Hessian-approximation in GPTQ use diagonal or block-diagonal, should AWQ absorb the scale into the preceding norm or the preceding linear" — is kernel craft and lives at the performance peer at [`ai-infra-performance-learning`](https://github.com/ai-infra-curriculum/ai-infra-performance-learning). This chapter teaches you how to recognise an algorithm-depth question and route it there, not how to answer it.
 
-<!-- needs-research: tool implementations for each algorithm vary (AutoAWQ, AutoGPTQ, llm-compressor, modelopt, TensorRT-Model-Optimizer, etc.). Flag spellings and default group sizes drift. Verify against your pinned tooling version. -->
+Tool implementations for each algorithm vary (AutoAWQ, AutoGPTQ, llm-compressor, NVIDIA Model Optimizer, TensorRT-Model-Optimizer, etc.); flag spellings differ even where defaults agree (`group_size=128` is the common default across AutoAWQ and AutoGPTQ). Verify the exact flag names against your pinned tooling version.
 
 ## The structural picture — forward pass with quantised weights
 
@@ -126,7 +126,7 @@ FP4 is new enough on serving stacks that the operator interface is still consoli
 - **It is block-scaled by design.** The format carries a shared scale per block (NVFP4: block-of-16 with FP8 scale; MXFP4: block-of-32 with E8M0 scale). You do not choose "scale granularity" at a higher level — the format is the granularity.
 - **The quantisation recipe is similar in shape to FP8** — calibration (or dynamic running-max), per-block scale calibration, static or dynamic strategies. The main difference is the much tighter representable range per element, which makes outlier-robustness tooling (SmoothQuant-style migration, Hadamard rotations, or AWQ-shaped channel scaling) much more useful at FP4.
 
-<!-- needs-research: production FP4 serving in TRT-LLM / vLLM matures through 2025–2026. The current state of outlier mitigation (QuaRot / SpinQuant / rotated weights) interacting with FP4 serving is a moving target. Verify against the version your fleet runs. -->
+Production FP4 serving tooling in TRT-LLM and vLLM is evolving quickly. The interaction between outlier-mitigation recipes (QuaRot, SpinQuant, Hadamard-rotated weights) and the Blackwell FP4 serving path is an active area — verify both the engine-side and recipe-side support against the versions your fleet runs.
 
 **Operator posture for FP4 right now (2026):** treat it as an advanced variant that currently requires more validation than FP8. Target Blackwell. Expect the accuracy gate to need additional outlier-mitigation steps for sensitive models.
 

@@ -16,7 +16,7 @@ This chapter is the swap discipline. By the end you can:
 
 The swap discipline here is **quantisation-specific** — it addresses the HBM / dtype / kernel-recompile reality of swapping an LLM model. The broader rollout discipline (canary, shadow, response-diff, auto-rollback) belongs to module 113; this chapter owns the swap *primitive* module 113's rollouts use.
 
-<!-- needs-research: in-flight weight-reload support varies by engine (TRT-LLM experimental; vLLM partial; SGLang partial). Verify current state before relying on it in a production runbook. -->
+In-flight weight-reload support varies by engine (TRT-LLM typically requires an engine rebuild rather than in-process reload; vLLM and SGLang each expose weight-update APIs used primarily for LoRA and RL workflows). Verify the current state of the in-process reload path for your engine before relying on it in a production runbook.
 
 ## The structural picture — what a swap must guarantee
 
