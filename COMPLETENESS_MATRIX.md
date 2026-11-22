@@ -2,7 +2,7 @@
 
 AI Infrastructure Curriculum · Level 35 · [learning](https://github.com/ai-infra-curriculum/ai-infra-inference-engineer-learning) · [solutions](https://github.com/ai-infra-curriculum/ai-infra-inference-engineer-solutions)
 
-_Generated 2026-11-15 by `aicg org completeness`._
+_Generated 2026-11-22 by `aicg org completeness`._
 
 **Overall: 92%**
 
@@ -19,12 +19,12 @@ _Generated 2026-11-15 by `aicg org completeness`._
 | `mod-102-inference-engine-internals` | ✅ Complete | 21,526 | 5 | 5 | — | 5/5 |
 | `mod-103-request-scheduling-and-batching` | ✅ Complete | 22,748 | 5 | 5 | — | 5/5 |
 | `mod-104-kv-cache-management` | ✅ Complete | 28,024 | 6 | 6 | — | 6/6 |
-| `mod-105-quantization-and-model-ops` | ✅ Complete | 28,154 | 6 | 5 | — | 0/5 |
+| `mod-105-quantization-and-model-ops` | ✅ Complete | 28,261 | 6 | 5 | — | 0/5 |
 | `mod-106-multi-model-and-adapter-serving` | ✅ Complete | 28,044 | 6 | 5 | — | 0/5 |
 | `mod-107-distributed-inference-topologies` | ✅ Complete | 26,874 | 7 | 2 | — | 2/2 |
 | `mod-108-speculative-decoding-ops` | ✅ Complete | 27,506 | 6 | 4 | — | 4/4 |
 | `mod-109-autoscaling-fleet-and-resilience` | ✅ Complete | 25,664 | 7 | 0 | — | 0/0 |
-| `mod-110-observability-slo-and-cost` | ✅ Complete | 26,817 | 7 | 3 | — | 3/3 |
+| `mod-110-observability-slo-and-cost` | ✅ Complete | 26,803 | 7 | 3 | — | 3/3 |
 | `mod-111-inference-api-and-protocols` | ✅ Complete | 28,894 | 7 | 5 | — | 5/5 |
 | `mod-112-multimodal-and-emerging-serving` | ✅ Complete | 28,201 | 6 | 6 | — | 6/6 |
 | `mod-113-production-safety-and-rollouts` | ✅ Complete | 28,039 | 6 | 6 | — | 6/6 |
